@@ -1,0 +1,18 @@
+<html>
+    <head>
+        <title>Timelapse Toolchain</title>
+    </head>
+    <body>
+        <!-- Upload form. Note enctype attribute! -->
+        <form action="{% url 'upload_csv' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <p>{{ form.non_field_errors }}</p>
+            <p>{{ form.csvfile.label_tag }} {{ form.csvfile.help_text }}</p>
+            <p>
+                {{ form.csvfile.errors }}
+                {{ form.csvfile }}
+            </p>
+            <p><input type="submit" value="Upload" /></p>
+        </form>
+    </body>
+</html> 
