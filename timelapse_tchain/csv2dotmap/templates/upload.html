@@ -1,11 +1,34 @@
+{% load staticfiles %}
+<!DOCTYPE html>
 <html>
-    <head>
-        <title>Timelapse Toolchain</title>
+    <head>	
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<title>CREATE Timelapse Visualization Generator</title>
     </head>
     <body>
+		<h1>Timelapse Visualization Generator</h1>
+		<p>A simple CREATE Lab utility to allow non-programmers to create embeddable WebGL based map visualizations.</p>
+		<h2>Accepted Data Formats</h2>
+		<p>Download an <a href="{% static "example-x-y-time.csv" %}">example CSV file here</a></p>
+		<p>User-supplied comma-separated value file (upload or URL)</p>
+		<p>Valid file layouts:</p>
+		<ul>
+			<li>Lat, Lon</li>
+			<li>Lat, Lon, Time</li><li class="c1 c2"><span class="c4">Lat, Lon, Time, HexColor (Coming soon!)</li>
+			<li>Lat, Lon, Time, R, G, B, A &nbsp;(Coming soon!)</li>
+		</ul>
+		<p>Latitude and longitude must be specified in WGS84 decimal degrees.</p>
+		<p>Dates must be supplied as strings in &ldquo;YYYY-MM-DD&rdquo; format, or dates with times in "YYYY-MM-DD HH:MM:SS" or ISO 8601 "2016-01-01T09:00:00.000" format.</p>
+		<p>Columns must match the following format:</p>
+		<ul>
+			<li>Latitude: first column (no header), or named &ldquo;lat&rdquo; or &ldquo;latitude&rdquo;</li>
+			<li>Longitude: second column (no header), or named &ldquo;lon&rdquo; or &ldquo;longitude&rdquo;</li>
+			<li>Time: third column (no header), or named &ldquo;date&rdquo; or &ldquo;time&rdquo;</li>
+		</ul>
         <!-- Upload form. Note enctype attribute! -->
         <form action="{% url 'upload_csv' %}" method="post" enctype="multipart/form-data">
-            {% csrf_token %}
+
+			{% csrf_token %}
             <p>{{ form.non_field_errors }}</p>
             <p>{{ form.csvfile.label_tag }} {{ form.csvfile.help_text }}</p>
             <p>
