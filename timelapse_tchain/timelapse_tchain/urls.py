@@ -15,6 +15,8 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+from django.conf import settings
+from django.conf.urls.static import static
 
 from csv2dotmap import views
 
@@ -22,4 +24,4 @@ urlpatterns = [
     url(r'^upload_csv/$', views.upload_csv, name='upload_csv'),
     url(r'^result/$', views.result, name='result'),
     url(r'^admin/', admin.site.urls),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

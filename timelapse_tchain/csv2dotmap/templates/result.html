@@ -1,3 +1,4 @@
+{% load staticfiles %}
 <!DOCTYPE html>
 <html>
     <head>
@@ -7,8 +8,8 @@
 	    <h1>Timelapse Created</h1>
 	    <p>Your Timelapse Animation has been created!</p>
 	    <p>A preview of your timelapse is available below:</p>
-	    <iframe src="../uploads/index.html" width=640 height=480></iframe>
+	    <iframe src="{% static 'index.html' %}" width=640 height=480></iframe>
 
-	    <p>Download your project: <a href="result.zip">result.zip</a></p>
+	    <p>Download your project: <a href="{% static 'result.zip' %}">result.zip</a></p>
     </body>
 </html> 
