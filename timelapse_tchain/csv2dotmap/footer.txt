@@ -1,9 +1,10 @@
-          var map;
+      var map;
       var canvasLayer;
       var timeSlider;
       var gl;
       var mapMatrix = new Float32Array(16);
-
+      var timeZoneOffset = (new Date().getTimezoneOffset()) * 60; // locale timezone offset, in seconds
+	  
       /**
        * Given DOM reference to the vertex shader source and the fragement shader source, 
        * returns a compiled WebGL program. With error checking.
@@ -113,7 +114,7 @@
             // set uniform values
             gl.uniform4f(obj.u_ColorLocation, obj.rgba[0], obj.rgba[1], obj.rgba[2], obj.rgba[3]);
             gl.uniformMatrix4fv(obj.matrixLocation, false, mapMatrix);
-            gl.uniform1f(obj.sliderLocation, timeSlider.getCurrentTime() / 1000.0); // we expect our datasets to have unix timestamps
+            gl.uniform1f(obj.sliderLocation, (timeSlider.getCurrentTime() / 1000.0) - timeZoneOffset); // we expect our datasets to have unix UTC timestamps
 
             // draw!  
             gl.drawArrays(gl.POINTS, 0, obj.count);

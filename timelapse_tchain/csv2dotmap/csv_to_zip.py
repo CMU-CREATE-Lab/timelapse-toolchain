@@ -3,13 +3,10 @@
 
 import os, array, csv, json, math, random, urllib2, sys
 from datetime import datetime
+from dateutil.parser import parse
 import zipfile
 
-from django.conf import settings
-
 start_time, end_time, item_count = None, None, None
-
-OUT_DIR = os.path.join(getattr(settings, "BASE_DIR"))
 
 def LonLatToPixelXY(lonlat):
 	(lon, lat) = lonlat
@@ -19,38 +16,7 @@ def LonLatToPixelXY(lonlat):
 
 def YearMonthDayToEpoch(year, month, day):
   return (datetime(int(year), int(month), int(day)) - datetime(1970, 1, 1)).total_seconds()
-
-def parseTime(t):
-	fmt = None
-	t = str(t).lower()
-	if len(t) == 10:
-		if t[4] == '-': # YYYY-MM-DD
-			fmt = '%Y-%m-%d'
-		elif t[4] == '/': # YYYY/MM/DD
-			fmt = '%Y/%m/%d' 
-		elif t[2] == '/': # MM/DD/YYYY
-			fmt = '%m/%d/%Y'
-	elif len(t) == 4:
-		fmt = '%Y'
-	elif len(t) == 19: # YYYY-MM-DD HH:MM:SS or YYYY-MM-DDTHH:MM:SS
-		if t[10] == 't':
-			fmt = '%Y-%m-%dT%H:%M:%S'
-		else:
-			fmt = '%Y-%m-%d %H:%M:%S'
-	elif len(t) == 23: # YYYY-MM-DD HH:MM:SS.000 or YYYY-MM-DDTHH:MM:SS.000
-		if t[10] == 't':
-			fmt = '%Y-%m-%dT%H:%M:%S.%f'
-		else:
-			fmt = '%Y-%m-%d %H:%M:%S.%f'
-	if fmt is not None:
-		try:
-			return datetime.strptime(t, fmt)
-		except ValueError:
-			print 'Error parsing "' + t + '" with format "' + fmt + '"'
-			raise
-	else:
-		raise ValueError('Unable to parse ' + f + '. Unknown format')
-
+	
 def generate_binary(file):
 	global start_time, end_time, item_count
 	# to do: implement handling of CSVs without headers
@@ -75,7 +41,8 @@ def generate_binary(file):
 
 	for row in rows:
 		try:
-			date = parseTime(row[date_col])
+			#date = parseTime(row[date_col])
+			date = parse(row[date_col], ignoretz=True)
 		except ValueError:
 			print 'error converting date for: ', row
 			continue
@@ -96,26 +63,82 @@ def generate_binary(file):
 	f.close()
 	array.array('f', data).tofile(open('data.bin', 'wb'))
 
-def generate_html(file):
-	header = open(os.path.join(OUT_DIR, 'csv2dotmap', 'header.txt'), 'r')
-	footer = open(os.path.join(OUT_DIR, 'csv2dotmap', 'footer.txt'), 'r')
 
-	middle = "var timeSliderOptions = { "
-	middle += "startTime: new Date(%s,%s,%s).getTime(), " % (start_time.year, start_time.month - 1, start_time.day)
-	middle += "endTime: new Date(%s,%s,%s).getTime(), " % (end_time.year, end_time.month - 1, end_time.day)
-	middle +=  """dwellAnimationTime: 2 * 1000, 
-          increment: 120*24*60*60*1000,
-          formatCurrentTime: function(date) { // Define time label
-              var month = date.getMonth() + 1, day = date.getDate();
-              return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day);
-          },
-          animationRate: {
-            fast: 20,
-            medium: 40,
-            slow: 80
-          }
-        };"""
-	html = header.read() + "\n" + middle + "\n" + footer.read()
+def generate_html(file):
+	header = open('header.txt', 'r')
+	footer = open('footer.txt', 'r')
+
+	second = 1000
+	minute = 60 * second
+	hour = 60 * minute
+	day = 24 * hour
+	year = 365 * day
+
+	span = (end_time - start_time).total_seconds() * 1000
+
+	if span <= second:
+		increment = 1
+	elif span <= minute:
+		increment = 200
+	elif span <= hour:
+		increment = 10 * second
+	elif span <= day:
+		increment = 5 * minute
+	elif span <= 7 * day:
+		increment = 30 * minute
+	elif span <= 30 * day:
+		increment = 2 * hour
+	elif span <= 180 * day:
+		increment = 6 * hour
+	elif span <= 365 * day:
+		increment = day
+	elif span <= 15 * year:
+		increment = (span // year) * day
+	elif span <= 50 * year:
+		increment = 30 * day
+	elif span <= 500 * year:
+		increment = year
+	elif span <= 15000:
+		increment = 10 * year
+	else:
+		increment = year
+	
+	#test_spans = [minute, hour, day, 30*day, 180*day, year, 5*year, 10*year, 25*year, 100*year]
+
+	mm_ss = "return date.getHours() + ':' + date.getMinutes()"
+	hh_mm = "var hrs = date.getHours(), mins = date.getMinutes(); return (hrs > 12 ? hrs - 12 : hrs) + ':' + (mins < 10 ? '0' + mins : mins) + ' ' + (hrs >= 12 ? 'pm' : 'am');"
+	yyyy_mm_dd_hh_mm = "var hrs = date.getHours(), mins = date.getMinutes(), month = date.getMonth() + 1, day = date.getDate(); return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day) + ' ' + (hrs > 12 ? hrs - 12 : hrs) + ':' + (mins < 10 ? '0' + mins : mins) + ' ' + (hrs >= 12 ? 'pm' : 'am');"
+	yyyy_mm_dd = "var month = date.getMonth() + 1, day = date.getDate(); return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day);"
+	yyyy = "return date.getFullYear()"
+	if span < hour:
+		date_format_str = mm_ss
+	elif span < day:
+		date_format_str = hh_mm
+	elif span < 180 * day:
+		date_format_str = yyyy_mm_dd_hh_mm
+	elif span < 15 * year:
+		date_format_str = yyyy_mm_dd
+	else:
+		date_format_str = yyyy
+
+	fast = 3000 / (span / increment)
+	medium = 2 * fast
+	slow = 2 * medium
+	
+	print 'divsor:', (span // increment), 'span:', span, 'increment', increment, 'fast:', fast
+	total_increments = span / increment
+	print 'increments:' + str(total_increments)
+
+	ts =  "      var timeSliderOptions = { \n"
+	ts += "        startTime: new Date(%s,%s,%s,%s,%s,%s).getTime(), \n" % (start_time.year, start_time.month - 1, start_time.day, start_time.hour, start_time.minute, start_time.second)
+	ts += "        endTime: new Date(%s,%s,%s,%s,%s,%s).getTime(), \n" % (end_time.year, end_time.month - 1, end_time.day, end_time.hour, end_time.minute, end_time.second)
+	ts += "        dwellAnimationTime: 2 * 1000, \n"
+	ts += "        increment: %s, \n" % (increment)
+	ts += "        formatCurrentTime: function(date) { %s },\n" % date_format_str
+	ts += "        animationRate: { fast: %s, medium: %s, slow: %s }\n" % (fast, medium, slow)
+	ts += "      };"
+
+	html = header.read() + "\n" + ts + "\n" + footer.read()
 	with open('index.html', 'w') as f:
 		f.write(html)
 		f.close
@@ -123,22 +146,22 @@ def generate_html(file):
 
 def build_zip():
 	try:
-	    import zlib
-	    compression = zipfile.ZIP_DEFLATED
+		import zlib
+		compression = zipfile.ZIP_DEFLATED
 	except:
-	    compression = zipfile.ZIP_STORED
+		compression = zipfile.ZIP_STORED
 
 	modes = { zipfile.ZIP_DEFLATED: 'deflated',  zipfile.ZIP_STORED:   'stored',   }
 
 	print 'creating archive'
-	zf = zipfile.ZipFile(os.path.join(OUT_DIR, 'static', 'result.zip'), mode='w')
+	zf = zipfile.ZipFile('result.zip', mode='w')
 	try:
-	    print 'adding files with compression mode', modes[compression]
-	    zf.write('index.html', compress_type=compression)
-	    zf.write('data.bin', compress_type=compression)
+		print 'adding files with compression mode', modes[compression]
+		zf.write('index.html', compress_type=compression)
+		zf.write('data.bin', compress_type=compression)
 	finally:
-	    print 'closing'
-	    zf.close()
+		print 'closing'
+		zf.close()
 
 
 def main(file):
