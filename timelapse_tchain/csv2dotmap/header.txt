@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  	<title>Timelapse</title>
+  	<style>
+  		html, body, #map-div, #loading {
+    	  margin: 0;
+    	  padding: 0;
+    	  height: 100%;
+        background-color: white;
+    	}
+      #layers {
+        padding: 5px;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: white;
+      }
+  	</style>
+
+    <link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" type="text/css" href="https://explorables.cmucreatelab.org/data-visualization-tools/css/defaultUI.css" />
+  </head>
+  <body>
+    <div id="loading"></div>
+    <div id="map-div"></div>
+    <div id="time-slider-controls"></div>
+
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3.24"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="https://explorables.cmucreatelab.org/data-visualization-tools/js/CanvasLayer.js"></script>
+    <script type="text/javascript" src="https://explorables.cmucreatelab.org/data-visualization-tools/js/TimeSlider.js"></script>
+
+    <script type="text/javascript">
+      // draw "loading" pill wheel
+      for(var i=0, html; i<12; i++) html += "<rect x='46.5' y='40' width='7' height='20' rx='5' ry='5' fill='#00b2ff' transform='rotate(" + i*30 + " 50 50) translate(0 -30)'><animate attributeName='opacity' from='1' to='0' dur='1s' begin='" + (i+1)/12 + "s' repeatCount='indefinite'/></rect>"; 
+      document.getElementById('loading').innerHTML = '<svg style="position: absolute; top: 50%; left: 50%;" width="120px" height="120px" viewBox="0 0 100 100">' + html + '</svg>';
+
+      /**
+       * Define global variables and utility functions 
+       */
+      
+      var datasets = [
+        {
+          name: 'timelapse-data',
+          url: 'data.bin'
+        }
+      ];
+
+        var mapOptions = {
+          zoom: 5,
+          center: new google.maps.LatLng(39.3, -95.8),
+          mapTypeControl: true
+        };
