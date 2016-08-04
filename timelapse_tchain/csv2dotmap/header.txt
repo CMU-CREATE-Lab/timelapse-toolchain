@@ -41,16 +41,4 @@
       /**
        * Define global variables and utility functions 
        */
-      
-      var datasets = [
-        {
-          name: 'timelapse-data',
-          url: 'data.bin'
-        }
-      ];
-
-        var mapOptions = {
-          zoom: 5,
-          center: new google.maps.LatLng(39.3, -95.8),
-          mapTypeControl: true
-        };
+       

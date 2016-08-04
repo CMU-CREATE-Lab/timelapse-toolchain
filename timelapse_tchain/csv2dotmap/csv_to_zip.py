@@ -1,12 +1,19 @@
 # CMU CREATE Lab
 # Python 2.7
 
-import os, array, csv, json, math, random, urllib2, sys
+import os, array, csv, json, math, random, urllib2, sys, string
 from datetime import datetime
 from dateutil.parser import parse
 import zipfile
 
-start_time, end_time, item_count = None, None, None
+# some useful constants	
+second = 1000
+minute = 60 * second
+hour = 60 * minute
+day = 24 * hour
+year = 365 * day
+
+
 
 def LonLatToPixelXY(lonlat):
 	(lon, lat) = lonlat
@@ -17,11 +24,10 @@ def LonLatToPixelXY(lonlat):
 def YearMonthDayToEpoch(year, month, day):
   return (datetime(int(year), int(month), int(day)) - datetime(1970, 1, 1)).total_seconds()
 	
-def generate_binary(file):
-	global start_time, end_time, item_count
+def generate_lat_lon_time_binary(data):
 	# to do: implement handling of CSVs without headers
 	rows = []
-	with open(file) as f:
+	with open(data['file']) as f:
 		reader = csv.DictReader(f)
 		for row in reader:
 			rows.append(row)
@@ -37,11 +43,10 @@ def generate_binary(file):
 
 	item_count = len(rows)
 	
-	data = []
+	items = []
 
 	for row in rows:
 		try:
-			#date = parseTime(row[date_col])
 			date = parse(row[date_col], ignoretz=True)
 		except ValueError:
 			print 'error converting date for: ', row
@@ -52,29 +57,32 @@ def generate_binary(file):
 		except ValueError:
 			print 'error converting coordinate for: ', row
 			continue
+		
+		if lon > data['max_x']:
+			data['max_x'] = lon
+		elif lon < data['min_x']:
+			data['min_x'] = lon
+		if lat > data['max_y']:
+			data['max_y'] = lat
+		elif lat < data['min_y']:
+			data['min_y'] = lat
+
+		if date < data['start_time']:
+			data['start_time'] = date
+		if date > data['end_time']:
+			data['end_time'] = date
+
 		x,y = LonLatToPixelXY([lon,lat])
-		if start_time is None or start_time > date:
-			start_time = date
-		if end_time is None or end_time < date:
-			end_time = date
 		epochtime = (date - datetime(1970, 1, 1)).total_seconds()
-		data += [x,y,epochtime]
+		items += [x,y,epochtime]
 
-	f.close()
-	array.array('f', data).tofile(open('data.bin', 'wb'))
+	data['bin_url'] = data['base_name'] + '.bin'
+	array.array('f', items).tofile(open(data['bin_url'], 'wb'))
 
+	return data
 
-def generate_html(file):
-	header = open('header.txt', 'r')
-	footer = open('footer.txt', 'r')
-
-	second = 1000
-	minute = 60 * second
-	hour = 60 * minute
-	day = 24 * hour
-	year = 365 * day
-
-	span = (end_time - start_time).total_seconds() * 1000
+def calc_span_increment(data):
+	span = (data['end_time'] - data['start_time']).total_seconds() * 1000
 
 	if span <= second:
 		increment = 1
@@ -102,14 +110,49 @@ def generate_html(file):
 		increment = 10 * year
 	else:
 		increment = year
-	
-	#test_spans = [minute, hour, day, 30*day, 180*day, year, 5*year, 10*year, 25*year, 100*year]
+
+	#data['increment'] = increment
+	#data['span'] = span	
+
+	return (span, increment)
+
+def calc_centroid_zoom(data):
+	# sets default zoom level for 800 x 600
+	lat1 = math.radians(data['min_y'])
+	lon1 = math.radians(data['min_x'])
+	lat2 = math.radians(data['max_y'])
+	lon2 = math.radians(data['max_x'])
+	dLng = math.radians(data['min_x'] - data['max_x'])
+
+	Bx = math.cos(lat2) * math.cos(dLng)
+	By = math.cos(lat2) * math.sin(dLng)
+	lat3 = math.atan2(math.sin(lat1) + math.sin(lat2), \
+	        math.sqrt( (math.cos(lat1) + Bx) * (math.cos(lat1) + Bx) + By * By) )
+	lon3 = lon1 + math.atan2(By, math.cos(lat1) + Bx)
+
+	mid_y = round(math.degrees(lat3), 4)
+	mid_x = round(math.degrees(lon3), 4)
+
+	latFraction = (lat2 - lat1) / math.pi
+	lngDiff = data['max_x'] - data['min_x']
+	if lngDiff < 0:
+	    lngDiff += 360
+	lngFraction = lngDiff / 360
+	latZoom = math.floor(math.log(768 / 256 / latFraction) / math.log(2))
+	lngZoom = math.floor(math.log(1024 / 256 / lngFraction) / math.log(2))
+	zoom = min([latZoom, lngZoom, 21])
+	return (mid_x, mid_y, zoom)
+	#return data
+
+def generate_html(data):
+	span, increment = calc_span_increment(data)
 
 	mm_ss = "return date.getHours() + ':' + date.getMinutes()"
 	hh_mm = "var hrs = date.getHours(), mins = date.getMinutes(); return (hrs > 12 ? hrs - 12 : hrs) + ':' + (mins < 10 ? '0' + mins : mins) + ' ' + (hrs >= 12 ? 'pm' : 'am');"
 	yyyy_mm_dd_hh_mm = "var hrs = date.getHours(), mins = date.getMinutes(), month = date.getMonth() + 1, day = date.getDate(); return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day) + ' ' + (hrs > 12 ? hrs - 12 : hrs) + ':' + (mins < 10 ? '0' + mins : mins) + ' ' + (hrs >= 12 ? 'pm' : 'am');"
 	yyyy_mm_dd = "var month = date.getMonth() + 1, day = date.getDate(); return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day);"
 	yyyy = "return date.getFullYear()"
+
 	if span < hour:
 		date_format_str = mm_ss
 	elif span < day:
@@ -120,31 +163,46 @@ def generate_html(file):
 		date_format_str = yyyy_mm_dd
 	else:
 		date_format_str = yyyy
-
-	fast = 3000 / (span / increment)
+	
+	fast = round(3000 / (span / increment), 2) # three seconds
 	medium = 2 * fast
 	slow = 2 * medium
 	
-	print 'divsor:', (span // increment), 'span:', span, 'increment', increment, 'fast:', fast
-	total_increments = span / increment
-	print 'increments:' + str(total_increments)
+	#print 'divsor:', (span // increment), 'span:', span, 'increment', increment, 'fast:', fast
+	#total_increments = span / increment
+	#print 'increments:' + str(total_increments)
 
-	ts =  "      var timeSliderOptions = { \n"
-	ts += "        startTime: new Date(%s,%s,%s,%s,%s,%s).getTime(), \n" % (start_time.year, start_time.month - 1, start_time.day, start_time.hour, start_time.minute, start_time.second)
-	ts += "        endTime: new Date(%s,%s,%s,%s,%s,%s).getTime(), \n" % (end_time.year, end_time.month - 1, end_time.day, end_time.hour, end_time.minute, end_time.second)
-	ts += "        dwellAnimationTime: 2 * 1000, \n"
-	ts += "        increment: %s, \n" % (increment)
-	ts += "        formatCurrentTime: function(date) { %s },\n" % date_format_str
-	ts += "        animationRate: { fast: %s, medium: %s, slow: %s }\n" % (fast, medium, slow)
-	ts += "      };"
+	x, y, zoom = calc_centroid_zoom(data)
 
-	html = header.read() + "\n" + ts + "\n" + footer.read()
+	start_time = data['start_time']
+	end_time = data['end_time']
+
+	header = open('header.txt', 'r')
+	footer = open('footer.txt', 'r')
+	
+	t =   "      var datasets = [{ name: '%s', url: '%s' }];\n" % (data['base_name'], data['bin_url'])
+	t +=  "      var mapOptions = {\n"
+	t +=  "        zoom: %s,\n" % zoom
+	t +=  "        center: new google.maps.LatLng(%s, %s),\n" % (y, x)
+	t +=  "        mapTypeControl: true\n"
+	t +=  "      };\n"
+
+	t +=  "      var timeSliderOptions = { \n"
+	t +=  "        startTime: new Date(%s,%s,%s,%s,%s,%s).getTime(), \n" % (start_time.year, start_time.month - 1, start_time.day, start_time.hour, start_time.minute, start_time.second)
+	t +=  "        endTime: new Date(%s,%s,%s,%s,%s,%s).getTime(), \n" % (end_time.year, end_time.month - 1, end_time.day, end_time.hour, end_time.minute, end_time.second)
+	t +=  "        dwellAnimationTime: 2 * 1000, \n"
+	t +=  "        increment: %s, \n" % (increment)
+	t +=  "        formatCurrentTime: function(date) { %s },\n" % date_format_str
+	t +=  "        animationRate: { fast: %s, medium: %s, slow: %s }\n" % (fast, medium, slow)
+	t +=  "      };"
+
+	html = header.read() + "\n" + t + "\n" + footer.read()
 	with open('index.html', 'w') as f:
 		f.write(html)
-		f.close
 
+	return data
 
-def build_zip():
+def build_zip(data):
 	try:
 		import zlib
 		compression = zipfile.ZIP_DEFLATED
@@ -158,16 +216,36 @@ def build_zip():
 	try:
 		print 'adding files with compression mode', modes[compression]
 		zf.write('index.html', compress_type=compression)
-		zf.write('data.bin', compress_type=compression)
+		zf.write(data['bin_url'], compress_type=compression)
 	finally:
 		print 'closing'
 		zf.close()
 
 
 def main(file):
-	generate_binary(file)
-	generate_html(file)
-	build_zip()
+	base_name = string.split(os.path.basename(file), '.')[0]
+	
+	data = {
+		'file': file,
+		'base_name': base_name,
+		'start_time': datetime.max,
+		'end_time': datetime.min,
+		'item_count': 0,
+		'min_x': float('inf'),
+		'max_x': -float('inf'),
+		'min_y': float('inf'),
+		'max_y': -float('inf'),
+		'interval': None,
+		'span': None,
+		'bin_url': None
+	}
+
+	# 1. Determine the file format of the uploaded file
+	# -- for now, assume lat/lon/time
+	# 2. Generate the Binary File
+	data = generate_lat_lon_time_binary(data)
+	data = generate_html(data)
+	build_zip(data)
 
 if __name__ == "__main__":
 	if (len(sys.argv) != 2) or (sys.argv[1][-3:] != 'csv'):
