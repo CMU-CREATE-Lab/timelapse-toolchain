@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>	
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<title>CREATE Timelapse Visualization Generator</title>
+    </head>
+    <body>
+		<h1>Timelapse Visualization Generator</h1>
+		<p>A simple CREATE Lab utility to allow non-programmers to create embeddable WebGL based map visualizations.</p>
+		<h2>Accepted Data Formats</h2>
+		<p>User-supplied comma-separated value file (upload or URL)</p>
+		<p>Valid file layouts:</p>
+		<ul>
+			<li>Lat, Lon</li>
+			<li>Lat, Lon, Time</li><li class="c1 c2"><span class="c4">Lat, Lon, Time, HexColor (Coming soon!)</li>
+			<li>Lat, Lon, Time, R, G, B, A &nbsp;(Coming soon!)</li>
+		</ul>
+		<p>Latitude and longitude must be specified in WGS84 decimal degrees.</p>
+		<p>Dates must be supplied as strings in &ldquo;YYYY-MM-DD&rdquo; format, or dates with times in "YYYY-MM-DD HH:MM:SS" or ISO 8601 "2016-01-01T09:00:00.000" format.</p>
+		<p>Columns must match the following format:</p>
+		<ul>
+			<li>Latitude: first column (no header), or named &ldquo;lat&rdquo; or &ldquo;latitude&rdquo;</li>
+			<li>Longitude: second column (no header), or named &ldquo;lon&rdquo; or &ldquo;longitude&rdquo;</li>
+			<li>Time: third column (no header), or named &ldquo;date&rdquo; or &ldquo;time&rdquo;</li>
+		</ul>
+            </p>
+	    <form  method="POST" action="/upload_csv" enctype="multipart/form-data">
+	    <fieldset>
+		<legend>Upload CSV File:</legend>
+		<br>
+		<input type='hidden' id='MAX_FILE_SIZE' name='MAX_FILE_SIZE' value=4000000000/>
+		<div>
+		    <label for="fileselect">Select a file from your computer</label>
+		    <br>
+		    <input type="file" id="fileselect" name="csv_file" required/>
+		    <br>
+		</div>
+		<br>
+		<label for="project_name">Name of your project:</label>
+		<input type='text' name='project_name' placeholder='name of project' required/>
+		<br>
+		<label for="email" style='padding-right: 73px'>Your email:</label>
+		<input type='email' name='email' placeholder='your email' required/>
+		<br><br>
+		<input type="submit" name='submit' value="Submit"/>
+		<input type="Reset" onclick="resetForm(this.form)" value="Reset"/>
+	    </fieldset>
+        </form>
+    </body>
+</html> 
