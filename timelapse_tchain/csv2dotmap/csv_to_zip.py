@@ -196,8 +196,8 @@ def generate_html(data):
 	t +=  "        increment: %s, \n" % (increment)
 	t +=  "        formatCurrentTime: function(date) { %s },\n" % date_format_str
 	t +=  "        animationRate: { fast: %s, medium: %s, slow: %s }\n" % (fast, medium, slow)
-	t +=  "      };"
-	t +=  "    </script>"
+	t +=  "      };\n"
+	t +=  "    </script>\n"
 
 	html = header.read() + "\n" + t + "\n" + footer.read()
 	with open('index.html', 'w') as f:
