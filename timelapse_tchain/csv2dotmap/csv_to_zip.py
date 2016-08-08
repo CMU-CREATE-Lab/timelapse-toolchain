@@ -169,7 +169,7 @@ def generate_html(data):
 	slow = 2 * medium
 	
 	#print 'divsor:', (span // increment), 'span:', span, 'increment', increment, 'fast:', fast
-	#total_increments = span / increment
+	total_increments = span // increment
 	#print 'increments:' + str(total_increments)
 
 	x, y, zoom = calc_centroid_zoom(data)
@@ -177,12 +177,11 @@ def generate_html(data):
 	start_time = data['start_time']
 	end_time = data['end_time']
 
-	duration = pointSize = feather = "null"
+	duration = pointSize = hardness = "null"
 
 	header = open('header.html', 'r')
 	footer = open('footer.html', 'r')
-	
-	t =   "      var datasets = [{ name: '%s', url: '%s', duration: %s, feather: %s, pointSize: %s }];\n" % (data['base_name'], data['bin_url'], duration, pointSize, feather)
+	t = header.read() + "\n"
 	t +=  "      var mapOptions = {\n"
 	t +=  "        zoom: %s,\n" % zoom
 	t +=  "        center: new google.maps.LatLng(%s, %s),\n" % (y, x)
@@ -197,13 +196,15 @@ def generate_html(data):
 	t +=  "        formatCurrentTime: function(date) { %s },\n" % date_format_str
 	t +=  "        animationRate: { fast: %s, medium: %s, slow: %s }\n" % (fast, medium, slow)
 	t +=  "      };\n"
+	
+	t +=  "      var datasets = [{ name: '%s', url: '%s', duration: %s, hardness: %s, pointSize: %s }];\n" % (data['base_name'], data['bin_url'], duration, pointSize, hardness)
 	t +=  "    </script>\n"
 
-	html = header.read() + "\n" + t + "\n" + footer.read()
+	html = t + "\n" + footer.read()
 	with open('index.html', 'w') as f:
 		f.write(html)
 
-	return data
+
 
 def build_zip(data):
 	try:
@@ -247,7 +248,7 @@ def main(file):
 	# -- for now, assume lat/lon/time
 	# 2. Generate the Binary File
 	data = generate_lat_lon_time_binary(data)
-	data = generate_html(data)
+	generate_html(data)
 	build_zip(data)
 
 if __name__ == "__main__":

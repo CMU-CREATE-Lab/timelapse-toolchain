@@ -46,8 +46,8 @@
             datasets[i].rgba = new Array([0.89, 0.1, 0.11, 1.0], [0.22, 0.49, 0.72, 1.0], [0.3, 0.69, 0.29, 1.0], [0.6, 0.31, 0.64, 1.0], [1., 0.5, 0, 1.0], [1., 1., 0.2, 1.0], [0.65, 0.34, 0.16, 1.0], [0.97, 0.51, 0.75, 1.0])[i%8]; 
           if(datasets[i].pointSize == null)
             datasets[i].pointSize = 10.0 // if not set, set default point size
-          if(datasets[i].feather == null)
-            datasets[i].feather = 0.5 // if not set, set default point size
+          if(datasets[i].hardness == null)
+            datasets[i].hardness = 0.5 // if not set, set default
           loadData(datasets[i]); // load data asychronously
         }
 
@@ -132,7 +132,7 @@
 
         obj.u_ColorLocation = gl.getUniformLocation(obj.program, "u_Color");
         obj.u_PointSizeLocation = gl.getUniformLocation(obj.program, "u_PointSize");
-        obj.u_FeatherLocation = gl.getUniformLocation(obj.program, "u_Feather");
+        obj.u_HardnessLocation = gl.getUniformLocation(obj.program, "u_Hardness");
         obj.u_MapMatrixLocation = gl.getUniformLocation(obj.program, 'u_MapMatrix');
         obj.u_TimeBoundsLocation = gl.getUniformLocation(obj.program, 'u_TimeBounds');
         
@@ -163,7 +163,7 @@
           
             // set uniform values
             gl.uniform4f(obj.u_ColorLocation, obj.rgba[0], obj.rgba[1], obj.rgba[2], obj.rgba[3]);
-            gl.uniform1f(obj.u_FeatherLocation, obj.feather)
+            gl.uniform1f(obj.u_HardnessLocation, obj.hardness)
             gl.uniform1f(obj.u_PointSizeLocation, obj.pointSize)
             gl.uniformMatrix4fv(obj.u_MapMatrixLocation, false, mapMatrix);
 
@@ -191,6 +191,8 @@
         uniform float u_PointSize;
         uniform mat4 u_MapMatrix;
 
+        varying float v_PtSize;
+
         void main() {
           if ( (a_time < u_TimeBounds[0]) || (a_time > u_TimeBounds[1]) ) {
             gl_Position = vec4(-1,-1,-1,-1); // if outside of time window function, do not display
@@ -199,22 +201,24 @@
           }
 
           gl_PointSize = u_PointSize;
+          v_PtSize = u_PointSize;
         }
     </script>
 
-    <script type="x-shader/x-vertex" id="point-fragment-shader">
+    <script type="x-shader/x-fragment" id="point-fragment-shader">
         precision mediump float;
-        
+
+        varying float v_PtSize;
+
         uniform vec4 u_Color;
-        uniform float u_Feather;
-        
-        float feather = 4.0 * u_Feather;
-        void main() {
+        uniform float u_Hardness;
+
+        void main() {          
+          float min = min(u_Hardness * 0.5, 0.5 - (2.0 / v_PtSize));
           float dist = distance(vec2(0.5), gl_PointCoord); // distance from the point at [0.5, 0.5]
-          if(dist > 0.5) //outside of circle radius?
-            discard;
-          dist = 1.0 - (dist * feather);
-          gl_FragColor = u_Color * dist;
+          float alpha = 1.0 - smoothstep(min, 0.5, dist);
+
+          gl_FragColor = vec4(u_Color.rgb, u_Color.a * alpha);
         } 
     </script>
   </body>
