@@ -1,0 +1,4 @@
+python-dateutil==2.5.3
+Paste==2.0.3
+WebOb==1.6.1
+webapp2==2.5.2

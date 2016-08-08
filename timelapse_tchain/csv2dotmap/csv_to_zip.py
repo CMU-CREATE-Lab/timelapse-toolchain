@@ -1,7 +1,7 @@
 # CMU CREATE Lab
 # Python 2.7
 
-import os, array, csv, json, math, random, urllib2, sys
+import os, array, csv, json, math, sys
 from datetime import datetime
 from dateutil.parser import parse
 import zipfile
@@ -16,8 +16,8 @@ def LonLatToPixelXY(lonlat):
 
 def YearMonthDayToEpoch(year, month, day):
   return (datetime(int(year), int(month), int(day)) - datetime(1970, 1, 1)).total_seconds()
-	
-def generate_binary(file):
+
+def generate_binary(file, output_dir):
 	global start_time, end_time, item_count
 	# to do: implement handling of CSVs without headers
 	rows = []
@@ -30,13 +30,13 @@ def generate_binary(file):
 		row.update(dict((k.lower(), v) for k,v in row.iteritems())) # convert keys to lower case
 
 	col_names = rows[0].keys()
-	
+
 	lat_col = [i for i in ['lat', 'latitude', 'y'] if i in col_names][0]
 	lon_col = [i for i in ['lon', 'long', 'longitude', 'x'] if i in col_names][0]
 	date_col = [i for i in ['date', 'time', 'datetime', 'dates', 'times', 't'] if i in col_names][0]
 
 	item_count = len(rows)
-	
+
 	data = []
 
 	for row in rows:
@@ -60,13 +60,16 @@ def generate_binary(file):
 		epochtime = (date - datetime(1970, 1, 1)).total_seconds()
 		data += [x,y,epochtime]
 
-	f.close()
-	array.array('f', data).tofile(open('data.bin', 'wb'))
+        output_path = os.path.join(output_dir, 'data.bin')
+        with open(output_path, 'wb') as output_file:
+                array.array('f', data).tofile(output_file)
 
 
-def generate_html(file):
-	header = open('header.txt', 'r')
-	footer = open('footer.txt', 'r')
+def generate_html(file, output_dir):
+        current_path = os.path.realpath(__file__)
+        current_dir = os.path.dirname(current_path)
+	header = open(os.path.join(current_dir, 'header.txt'), 'r')
+	footer = open(os.path.join(current_dir, 'footer.txt'), 'r')
 
 	second = 1000
 	minute = 60 * second
@@ -102,7 +105,7 @@ def generate_html(file):
 		increment = 10 * year
 	else:
 		increment = year
-	
+
 	#test_spans = [minute, hour, day, 30*day, 180*day, year, 5*year, 10*year, 25*year, 100*year]
 
 	mm_ss = "return date.getHours() + ':' + date.getMinutes()"
@@ -124,7 +127,7 @@ def generate_html(file):
 	fast = 3000 / (span / increment)
 	medium = 2 * fast
 	slow = 2 * medium
-	
+
 	print 'divsor:', (span // increment), 'span:', span, 'increment', increment, 'fast:', fast
 	total_increments = span / increment
 	print 'increments:' + str(total_increments)
@@ -139,12 +142,11 @@ def generate_html(file):
 	ts += "      };"
 
 	html = header.read() + "\n" + ts + "\n" + footer.read()
-	with open('index.html', 'w') as f:
+	with open(os.path.join(output_dir, 'index.html'), 'w') as f:
 		f.write(html)
-		f.close
 
 
-def build_zip():
+def build_zip(input_dir, output_dir):
 	try:
 		import zlib
 		compression = zipfile.ZIP_DEFLATED
@@ -154,20 +156,23 @@ def build_zip():
 	modes = { zipfile.ZIP_DEFLATED: 'deflated',  zipfile.ZIP_STORED:   'stored',   }
 
 	print 'creating archive'
-	zf = zipfile.ZipFile('result.zip', mode='w')
+	zf = zipfile.ZipFile(os.path.join(output_dir, 'result.zip'), mode='w')
 	try:
 		print 'adding files with compression mode', modes[compression]
-		zf.write('index.html', compress_type=compression)
-		zf.write('data.bin', compress_type=compression)
+		zf.write(os.path.join(input_dir, 'index.html'), compress_type=compression)
+		zf.write(os.path.join(input_dir, 'data.bin'), compress_type=compression)
 	finally:
 		print 'closing'
 		zf.close()
 
 
-def main(file):
-	generate_binary(file)
-	generate_html(file)
-	build_zip()
+def main(file, output_dir=None):
+        if output_dir is None:
+                output_dir = '.'
+	generate_binary(file, output_dir)
+	generate_html(file, output_dir)
+        # For now, input and output dir for zip file are the same
+	build_zip(input_dir=output_dir, output_dir=output_dir)
 
 if __name__ == "__main__":
 	if (len(sys.argv) != 2) or (sys.argv[1][-3:] != 'csv'):

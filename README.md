@@ -10,11 +10,14 @@ a lightweight tool to empower non-technical users to create embedable timelapse 
 pip install -r requirements.txt
 ```
 
-## Run Django's development server
+## Update settings and create directory structure
 
-The example below is for port 8888
+Edit timelapse_tchain/settings.py to setup the input and output folders.
+
+## Run webapp2's development server
+
 
 ```
 cd timelapse_tchain/
-./manage.py runserver 0.0.0.0:8888
+python main.py
 ```
