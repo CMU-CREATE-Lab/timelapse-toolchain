@@ -1,3 +1,4 @@
+    <script type="text/javascript">
       var map;
       var canvasLayer;
       var timeSlider;
@@ -44,7 +45,7 @@
           if(datasets[i].rgba == null) // if no color is specified, grab one from our colorRamp
             datasets[i].rgba = new Array([0.89, 0.1, 0.11, 1.0], [0.22, 0.49, 0.72, 1.0], [0.3, 0.69, 0.29, 1.0], [0.6, 0.31, 0.64, 1.0], [1., 0.5, 0, 1.0], [1., 1., 0.2, 1.0], [0.65, 0.34, 0.16, 1.0], [0.97, 0.51, 0.75, 1.0])[i%8]; 
           if(datasets[i].pointSize == null)
-            datasets[i].pointSize = 5.0 // if not set, set default point size
+            datasets[i].pointSize = 10.0 // if not set, set default point size
           if(datasets[i].feather == null)
             datasets[i].feather = 0.5 // if not set, set default point size
           loadData(datasets[i]); // load data asychronously

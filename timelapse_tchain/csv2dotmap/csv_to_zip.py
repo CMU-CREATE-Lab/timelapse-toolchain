@@ -177,10 +177,12 @@ def generate_html(data):
 	start_time = data['start_time']
 	end_time = data['end_time']
 
-	header = open('header.txt', 'r')
-	footer = open('footer.txt', 'r')
+	duration = pointSize = feather = "null"
+
+	header = open('header.html', 'r')
+	footer = open('footer.html', 'r')
 	
-	t =   "      var datasets = [{ name: '%s', url: '%s' }];\n" % (data['base_name'], data['bin_url'])
+	t =   "      var datasets = [{ name: '%s', url: '%s', duration: %s, feather: %s, pointSize: %s }];\n" % (data['base_name'], data['bin_url'], duration, pointSize, feather)
 	t +=  "      var mapOptions = {\n"
 	t +=  "        zoom: %s,\n" % zoom
 	t +=  "        center: new google.maps.LatLng(%s, %s),\n" % (y, x)
@@ -195,6 +197,7 @@ def generate_html(data):
 	t +=  "        formatCurrentTime: function(date) { %s },\n" % date_format_str
 	t +=  "        animationRate: { fast: %s, medium: %s, slow: %s }\n" % (fast, medium, slow)
 	t +=  "      };"
+	t +=  "    </script>"
 
 	html = header.read() + "\n" + t + "\n" + footer.read()
 	with open('index.html', 'w') as f:
