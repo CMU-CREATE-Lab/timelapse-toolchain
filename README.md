@@ -2,7 +2,7 @@
 
 a lightweight tool to empower non-technical users to create embedable timelapse visualizations
 
-# Setting up Django's development environment
+# Setting webapp2 development environment
 
 ## Install requirements
 
