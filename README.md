@@ -13,11 +13,14 @@ pip install -r requirements.txt
 ## Update settings and create directory structure
 
 Edit timelapse_tchain/settings.py to setup the input and output folders.
+```
+cd timelapse_tchain/
+mkdir projects
+mkdir tmp
+```
 
 ## Run webapp2's development server
 
-
 ```
-cd timelapse_tchain/
 python main.py
 ```
