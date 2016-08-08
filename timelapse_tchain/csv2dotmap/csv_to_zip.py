@@ -73,7 +73,7 @@ def generate_lat_lon_time_binary(data):
 			data['end_time'] = date
 
 		x,y = LonLatToPixelXY([lon,lat])
-		epochtime = (date - datetime(1970, 1, 1)).total_seconds()
+		epochtime = (date - datetime(1970, 1, 1)).total_seconds() * 1000 # // time in JavaScript epoch time (milliseconds since 1970) in UTC timezone
 		items += [x,y,epochtime]
 
 	data['bin_url'] = data['base_name'] + '.bin'
