@@ -1,4 +1,4 @@
-import os
+import os, ast, json
 from email.utils import parseaddr
 
 import webapp2
@@ -83,7 +83,7 @@ class UploadHandler(webapp2.RequestHandler):
 
     def build_project(self, project_id):
         # TODO: Use celery
-        from csv2dotmap.csv_to_zip import main as generate_dotmap
+        from csv_to_zip import main as generate_dotmap
 
         input_file = '%s.csv' % project_id
         input_path = os.path.join(
@@ -92,4 +92,16 @@ class UploadHandler(webapp2.RequestHandler):
             self.app.config.get('PROJECTS_DIR'), project_id)
 
         generate_dotmap(input_path, output_dir)
-
+class UpdateHandler(webapp2.RequestHandler):
+    def post(self):
+        params = self.request.body
+        params = params.replace('true', 'True')
+        params = params.replace('false', 'False')
+        params = dict(ast.literal_eval(params))
+        print params
+        
+        #return webapp2.Response().set_status(200)
+        if True:
+            self.response.set_status(200)
+        else:
+            self.response.set_status(400)
