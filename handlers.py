@@ -4,7 +4,13 @@ from email.utils import parseaddr
 import webapp2
 from webapp2_extras import jinja2
 
+
 import models
+
+# JINJA_ENVIRONMENT = jinja2.Environment(
+#     loader=jinja2.FileSystemLoader(os.path.dirname(__file__) + '/templates'),
+#     extensions=['jinja2.ext.autoescape'],
+#     autoescape=True)
 
 
 class LandingPageHandler(webapp2.RequestHandler):
@@ -99,7 +105,11 @@ class UpdateHandler(webapp2.RequestHandler):
         params = params.replace('false', 'False')
         params = dict(ast.literal_eval(params))
         print params
-        
+        template = jinja2.get_jinja2().environment.get_template('project_index_template.html')
+        result = template.render(params)
+        with open('test-output.html', 'w') as f:
+            f.write(result)
+
         #return webapp2.Response().set_status(200)
         if True:
             self.response.set_status(200)

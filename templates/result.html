@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Timelapse</title>
+    <style>
+      html, body, #map-div, #loading {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background-color: white;
+      }
+      #layers {
+        padding: 5px;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: white;
+      }
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" type="text/css" href="https://explorables.cmucreatelab.org/data-visualization-tools/css/defaultUI.css" />
+
+    <!-- ***** INSERT CUSTOM-CSS HERE ***** -->
+    <!-- ***** CUSTOM-CSS END ***** -->
+
+  </head>
+  <body>
+    <div id="loading"></div>
+    <div id="map-div"></div>
+    <div id="time-slider-controls"></div>
+
+    <!-- ***** INSERT MAP-TOOLS HERE ***** -->
+    <!-- ***** MAP-TOOLS END ***** -->
+
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3.24&key=AIzaSyB3jyGMTT0U184L-rhbFZS4IEKfnQmJAZI"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="https://explorables.cmucreatelab.org/data-visualization-tools/js/CanvasLayer.js"></script>
+    <script type="text/javascript" src="https://explorables.cmucreatelab.org/data-visualization-tools/js/TimeSlider.js"></script>
+
+    <script type="text/javascript">
+      // draw "loading" pill wheel
+      for(var i=0, html; i<12; i++) html += "<rect x='46.5' y='40' width='7' height='20' rx='5' ry='5' fill='#00b2ff' transform='rotate(" + i*30 + " 50 50) translate(0 -30)'><animate attributeName='opacity' from='1' to='0' dur='1s' begin='" + (i+1)/12 + "s' repeatCount='indefinite'/></rect>"; 
+      document.getElementById('loading').innerHTML = '<svg style="position: absolute; top: 50%; left: 50%;" width="120px" height="120px" viewBox="0 0 100 100">' + html + '</svg>';
+
+      /**
+       * Define global variables and utility functions 
+       */
+       
+      var mapOptions = {
+        zoom: 8.0,
+        center: new google.maps.LatLng(45.3514, -124.4666),
+        mapTypeControl: true
+      };
+      var timeSliderOptions = { 
+        startTime: new Date(1950,0,20,0,0,0).getTime(), 
+        endTime: new Date(2016,3,5,0,0,0).getTime(), 
+        dwellAnimationTime: 2 * 1000, 
+        increment: 31536000000, 
+        formatCurrentTime: function(date) { return date.getFullYear() },
+        animationRate: { fast: 45.28, medium: 90.56, slow: 181.12 }
+      };
+      var datasets = [{ name: 'example-x-y-time', url: 'example-x-y-time.bin', duration: 2089321200000, hardness: null, pointSize: null }//];
+      ,{ name: 'example-x-y-z-time', url: 'example-x-y-time.bin', duration: 2089321200000, hardness: null, pointSize: null }];
+    </script>
+
+    <script type="text/javascript">
+      var map;
+      var canvasLayer;
+      var timeSlider;
+      var gl;
+      var mapMatrix = new Float32Array(16);
+      var timeZoneOffset = (new Date().getTimezoneOffset()) * 60; // locale timezone offset, in seconds
+    
+      /**
+       * Initialize WebGL. Called when DOM ready
+       */
+      function init() {
+        // initialize Google Map      
+
+        var mapDiv = document.getElementById('map-div');
+        map = new google.maps.Map(mapDiv, mapOptions);
+        map.addListener('bounds_changed', resize, false);
+
+        // initialize the canvas layer
+        var canvasLayerOptions = {
+          map: map,
+          resizeHandler: resize,
+          animate: true,
+          updateHandler: drawPoints
+        };
+        canvasLayer = new CanvasLayer(canvasLayerOptions); // create a new canvas
+
+        // initialize the TimeSlider
+        timeSlider = new TimeSlider(timeSliderOptions);
+
+        // initialize WebGL
+        gl = canvasLayer.canvas.getContext('experimental-webgl');         // initialize WebGL
+        if(gl == null) {
+          document.body.innerHTML = 'Error initializing WebGL. Check that you are using a supported browser and that hardware acceleration is enabled.';
+          return;
+        }
+
+        gl.enable( gl.BLEND );
+        gl.blendFunc( gl.SRC_ALPHA, gl.ONE ); // explore alpha blending modes at: http://delphic.me.uk/webglalpha.html
+        //gl.blendFunc( gl.ONE_MINUS_CONSTANT_COLOR, gl.ONE_MINUS_SRC_ALPHA );
+
+        // setup our datasets
+        for (var i = 0; i < datasets.length; i++) {          
+          datasets[i].program = createProgram('point-vertex-shader', 'point-fragment-shader');
+          if(datasets[i].rgba == null) // if no color is specified, grab one from our colorRamp
+            datasets[i].rgba = new Array([0.89, 0.1, 0.11, 1.0], [0.22, 0.49, 0.72, 1.0], [0.3, 0.69, 0.29, 1.0], [0.6, 0.31, 0.64, 1.0], [1., 0.5, 0, 1.0], [1., 1., 0.2, 1.0], [0.65, 0.34, 0.16, 1.0], [0.97, 0.51, 0.75, 1.0])[i%8]; 
+          if(datasets[i].pointSize == null)
+            datasets[i].pointSize = 10.0 // if not set, set default point size
+          if(datasets[i].hardness == null)
+            datasets[i].hardness = 0.5 // if not set, set default
+          loadData(datasets[i]); // load data asychronously
+        }
+
+      }
+
+      /**
+       * Given DOM reference to the vertex shader source and the fragement shader source, 
+       * returns a compiled WebGL program. With error checking.
+       * @type {String}, {String}
+       */
+      function createProgram(vertexSource, fragmentSource) {
+        // create vertex shader for points
+        var vertexSrc = document.getElementById(vertexSource).text; // assign text of source code for vertex-sharder
+        var vertexShader = gl.createShader(gl.VERTEX_SHADER); // create shader object
+        gl.shaderSource(vertexShader, vertexSrc); // pass source code to new shader object
+        gl.compileShader(vertexShader); // compile shader object
+
+        if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) // verify that shader compiled correctly
+          console.log(gl.getShaderInfoLog(vertexShader));
+
+        // create fragment shader for points
+        var fragmentSrc = document.getElementById(fragmentSource).text;
+        var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fragmentShader, fragmentSrc);
+        gl.compileShader(fragmentShader);
+
+        if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS))
+          console.log(gl.getShaderInfoLog(fragmentShader));
+
+        // link point shaders to create our program
+        program = gl.createProgram(); // create new program object
+        gl.attachShader(program, vertexShader); // attach shaders to program object
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program); // link shaders
+
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS))
+          console.log(gl.getProgramInfoLog(program));
+
+        return program;
+      }
+
+      function loadData(obj) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', obj.url);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function() {
+          obj.data = new Float32Array(this.response);
+          obj.dataLoaded = true;
+          initializeWebGL(obj);
+          if(obj.enabled != false) document.getElementById('loading').style.display = 'none';
+          
+          //<!-- ***** INSERT SET-DATASET HERE ***** -->
+          //<!-- ***** SET-DATASET END ***** -->
+        }
+        xhr.send();
+      }
+
+      /** Translate X and Y values to current canvas scale */
+      function resize() {
+        console.log('resize handler');
+        var w = gl.canvas.width;
+        var h = gl.canvas.height;
+        gl.viewport(0, 0, w, h);
+
+        var scale = canvasLayer.getMapScale();
+        var t = canvasLayer.getMapTranslation();
+
+        mapMatrix.set([         2 * scale / w,                        0,    0,    0,
+                                            0,           scale * (-2/h),    0,    0,
+                                            0,                        0,    0,    0,
+                      -1 + (2* t.x * scale)/w, 1 + (-2 * t.y * scale)/h,    0,    1]);
+      }
+
+      /**
+       * Called after data loaded into object.data. Loads data into a WebGL buffer
+       */     
+      function initializeWebGL(obj) {
+        obj.arrayBuffer = gl.createBuffer();
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, obj.arrayBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, obj.data, gl.STATIC_DRAW);
+        
+        obj.attributeLocation = gl.getAttribLocation(obj.program, 'a_worldCoord');
+        obj.timeLocation = gl.getAttribLocation(obj.program, "a_time");
+
+        obj.u_ColorLocation = gl.getUniformLocation(obj.program, "u_Color");
+        obj.u_PointSizeLocation = gl.getUniformLocation(obj.program, "u_PointSize");
+        obj.u_HardnessLocation = gl.getUniformLocation(obj.program, "u_Hardness");
+        obj.u_MapMatrixLocation = gl.getUniformLocation(obj.program, 'u_MapMatrix');
+        obj.u_TimeBoundsLocation = gl.getUniformLocation(obj.program, 'u_TimeBounds');
+        
+        obj.count = obj.data.length / 3; // lat, lon, time
+        if(obj.enabled == null)
+          obj.enabled = true;    
+        return obj;
+      }
+
+      /**
+       * Called by CanvasLayer (controlled, in turn, by TimeSlider). 
+       * Link WebGL program to buffer data, update uniforms, and call draw WebGL function
+       */
+      function drawPoints() {
+        for(var i = 0; i < datasets.length; i++) {
+          obj = datasets[i];
+          if(obj.enabled) {
+            gl.useProgram(obj.program)
+            gl.bindBuffer(gl.ARRAY_BUFFER, obj.arrayBuffer);
+          
+            // enable the 'worldCoord' attribute in the shader to receive buffer
+            gl.enableVertexAttribArray(obj.attributeLocation);
+            gl.vertexAttribPointer(obj.attributeLocation, 2, gl.FLOAT, false, 12, 0); // tell webgl how buffer is laid out (lat, lon, time--4 bytes each)
+
+            // get the time values out of the buffer
+            gl.enableVertexAttribArray(obj.timeLocation);
+            gl.vertexAttribPointer(obj.timeLocation, 1, gl.FLOAT, false, 12, 8); // 8 byte offset
+          
+            // set uniform values
+            gl.uniform4f(obj.u_ColorLocation, obj.rgba[0], obj.rgba[1], obj.rgba[2], obj.rgba[3]);
+            gl.uniform1f(obj.u_HardnessLocation, obj.hardness)
+            gl.uniform1f(obj.u_PointSizeLocation, obj.pointSize)
+            gl.uniformMatrix4fv(obj.u_MapMatrixLocation, false, mapMatrix);
+
+            // var max = timeSlider.getCurrentTime() - timeZoneOffset;
+            // var min = (obj.duration == null || obj.duration <= 0) ? timeSliderOptions['startTime'] : max - obj.duration;
+            // gl.uniform2f(obj.u_TimeBoundsLocation, min, max); // time in JavaScript epoch time (milliseconds since 1970) in UTC timezone
+
+            var currentTime = timeSlider.getCurrentTime() - timeZoneOffset;
+            var min = currentTime - (obj.duration > 0 ? obj.duration : 0);
+            var max = currentTime - (obj.duration < 0 ? obj.duration : 0);
+            gl.uniform2f(obj.u_TimeBoundsLocation, min/1000.0, max/1000.0); // time in JavaScript epoch time (milliseconds since 1970) in UTC timezone
+
+            // draw!  
+            gl.drawArrays(gl.POINTS, 0, obj.count);
+            timeSlider.animate();
+          }
+        }
+      }
+
+
+      document.addEventListener('DOMContentLoaded', init, false);
+    </script>
+
+    <!-- Create WebGL Shaders -->
+    <script type="x-shader/x-vertex" id="point-vertex-shader">
+        attribute vec4 a_worldCoord;
+        attribute float a_time;
+
+        uniform vec2 u_TimeBounds;
+        uniform float u_PointSize;
+        uniform mat4 u_MapMatrix;
+
+        varying float v_PtSize;
+
+        void main() {
+          if ( (a_time < u_TimeBounds[0]) || (a_time > u_TimeBounds[1]) ) {
+            gl_Position = vec4(-1,-1,-1,-1); // if outside of time window function, do not display
+          } else {
+            gl_Position = u_MapMatrix * a_worldCoord; // transform world coordinate by matrix uniform variable
+          }
+
+          gl_PointSize = u_PointSize;
+          v_PtSize = u_PointSize;
+        }
+    </script>
+
+    <script type="x-shader/x-fragment" id="point-fragment-shader">
+        precision mediump float;
+
+        varying float v_PtSize;
+
+        uniform vec4 u_Color;
+        uniform float u_Hardness;
+
+        void main() {          
+          float min = min(u_Hardness * 0.5, 0.5 - (2.0 / v_PtSize));
+          float dist = distance(vec2(0.5), gl_PointCoord); // distance from the point at [0.5, 0.5]
+          float alpha = 1.0 - smoothstep(min, 0.5, dist);
+
+          gl_FragColor = vec4(u_Color.rgb, u_Color.a * alpha);
+        } 
+    </script>
+    <!-- ***** INSERT CUSTOM-JS HERE ***** -->
+    <!-- ***** CUSTOM-JS END ***** -->
+  </body>
+</html>
