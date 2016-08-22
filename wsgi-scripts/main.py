@@ -18,9 +18,9 @@ config = {
 
 
 app = webapp2.WSGIApplication([
-    webapp2.Route(r'/upload_csv', handler='handlers.UploadHandler', name='upload-csv'),
-    webapp2.Route(r'/update_project', handler='handlers.UpdateHandler', name='update-project'),
-    webapp2.Route(r'/error', handler='handlers.ErrorHandler', name='error')
+    webapp2.Route(r'/scripts/upload_csv', handler='handlers.UploadHandler', name='upload-csv'),
+    webapp2.Route(r'/scripts/update_project', handler='handlers.UpdateHandler', name='update-project'),
+    webapp2.Route(r'/scripts/error', handler='handlers.ErrorHandler', name='error')
 ], debug=DEBUG, config=config)
 
 
