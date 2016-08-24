@@ -89,6 +89,24 @@ html, body {
     margin: 0; 
 }
 
+label[for=project_title], label[for=project_id], label[for=email],
+input[type=text], input[type=email]{
+    display: inline-block;
+    vertical-align: baseline;
+}
+
+label[for=project_title], label[for=project_id], label[for=email]{
+    width: 100px;
+}
+
+input[type=text], input[type=email]{
+    width: calc(70% - 100px);
+}
+
+form p{
+    margin: 3px 0px;
+}
+
 .content-area{
     position: relative;
     width: 100%;
@@ -287,6 +305,31 @@ html, body {
     margin-top: 30px;
     margin-left: 15px;
     overflow: hidden;
+}
+
+.validate:before{
+    content: '?';
+    position: relative;
+    float: left;
+    margin-top: 3px;
+    margin-right: 8px;
+    font-size: 10px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: darkgray;
+    text-align: center;
+    color: white;
+}
+
+.validate.valid:before{
+    content: '✓';
+    background: green;
+}
+
+.validate.invalid:before{
+    content: '×';
+    background: red;
 }
 
 #status{

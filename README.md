@@ -34,7 +34,7 @@ Next, add the following lines to the appropriate Apache virtual host configurati
     </Directory>
 ```
 
-# Setting webapp2 development environment
+# Setting flask development environment
 
 ## Install requirements
 
@@ -42,17 +42,30 @@ Next, add the following lines to the appropriate Apache virtual host configurati
 pip install -r requirements.txt
 ```
 
-## Update settings and create directory structure
+## Create database
 
-Edit wsgi_scripts/settings.py to setup the input and output folders.
+Script checks if sqlite database (projects.db) exists. If not, creates.
 ```
-cd timelapse_tchain/
-mkdir tmp
-```
-
-## Run webapp2's development server
-Access the page at www.example.com/
-and the scripts at www.example.com/scripts
+cd scripts/
+python db.py
 ```
 
+## Run Flask's development server
+Windows:
+```
+set FLASK_DEBUG=1
+set FLASK_APP=main.py
+python -m flask run
+```
+*nix:
+```
+export FLASK_DEBUG=1
+export FLASK_APP=main.py
+python -m flask run
+```
+
+# Testing
+```
+curl -X POST -F 'project_title=My Project' -F 'email=ma4k@a.com' -F 'project_id=marks-project' -F file=@example-x-y-time.csv localhost:5000/create/
+curl -X GET localhost:5000/edit/marks-project
 ```

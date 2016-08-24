@@ -1,8 +1,11 @@
+{% extends "project.html" %}
+{% block css %}
 <!-- CUSTOM-CSS -->
-<link rel="stylesheet" type="text/css" href="css/normalize.css"/>
-<link rel="stylesheet" type="text/css" href="css/result-style.css"/>
+<link rel="stylesheet" type="text/css" href="{{ STATIC_DIR }}/css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="{{ STATIC_DIR }}/css/result-style.css"/>
 <!-- CUSTOM-CSS END-->
-
+{% endblock %}
+{% block maptools %}
 <!-- MAP-TOOLS -->
 <div id='map-tools'>
   <div id="preview-area" class="very-top centerX">
@@ -111,13 +114,18 @@
   </div>
 </div>
 <!-- MAP-TOOLS END -->
+{% endblock %}
 
+{% block js %}
 <!-- SET-DATASET -->
 if(typeof setDataset == 'function'){
 	setDataset(obj);
 }
 <!-- SET-DATASET END -->
+{% endblock %}
 
+{% block footer %}
 <!--  CUSTOM-JS -->
-<script type="text/javascript" src="js/result-js.js"></script>
+<script type="text/javascript" src="{{ STATIC_DIR }}/js/result-js.js"></script>
 <!--  CUSTOM-JS END -->
+{% endblock %}

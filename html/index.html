@@ -13,7 +13,7 @@
     <body>
     <!-- http://explorables.cmucreatelab.org/data-visualization-tools/examples/createlab-viirs/google-maps.html -->
         <div class="content-area" id="example-map">
-            <iframe src="http://explorables.cmucreatelab.org/data-visualization-tools/examples/createlab-viirs/google-maps.html" frameborder="0"></iframe>
+            <iframe src="" frameborder="0"></iframe>
             <div class='title-bar' id='title'><h1><span style="white-space: nowrap;">Timelapse Visualization</span> Generator</h1></div>
             <div class='title-bar' id='subtitle'><h3>A simple CREATE Lab utility to allow non-programmers<br>to create embeddable WebGL based map visualizations.</h3></div>
         </div>
@@ -57,7 +57,7 @@
                 </ul>
             </div>
             <div id='upload-form'>
-                <form onsubmit="return checkForm(this);" action="#self" method="POST" enctype="multipart/form-data">
+                <form onsubmit="return checkForm(this);" action="/create/" method="POST" enctype="multipart/form-data">
                     <fieldset>
                         <legend>Upload CSV File:</legend>
                         <br>
@@ -65,15 +65,27 @@
  -->                    <div>
                             <label for="fileselect">Select a file from your computer</label>
                             <br>
-                            <input type="file" id="fileselect" name="csv_file" required/>
+                            <input type="file" id="fileselect" name="file" required/>
                             <br>
                         </div>
                         <br>
-                        <label for="project_name">Name of your project:</label>
-                        <input type='text' name='project_name' placeholder='name of project' required/>
+                        <label for="project_title">Project Title:</label>
+                        <input type='text' name='project_title' placeholder="My Project's Title" 
+                        onchange="generateProjectID(this.value);" 
+                        oninput="generateProjectID(this.value);"
+                        required/>
                         <br>
-                        <label for="email" style='padding-right: 73px'>Your email:</label>
-                        <input type='email' name='email' placeholder='your email' required/>
+                        <label for="project_id">Project ID:</label>
+                        <input type='text' name='project_id' placeholder='my-projects-title' 
+                        onchange="validateID(this.value);"
+                        oninput="validateID(this.value);" 
+                        required/>
+                        <p id="example-url"><span style="color: rgb(150,150,150); font-size: 15px">e.g. http://www.create.maps.org/projects/my-projects-title</span></p>
+                        <p id="valid-url" class="validate"> valid url</p>
+                        <p id="available-url" class="validate"> available</p>
+                        <br>
+                        <label for="email">Your Email:</label>
+                        <input type='email' name='email' placeholder='email@me.com' />
                         <br><br>
                         <input type="submit" name='submit' value="Submit"/>
                         <input type="Reset" onclick="resetForm(this.form)" value="Reset"/>
@@ -82,24 +94,22 @@
                 </form>
                 <br>
                 <br>
-                <div id='status'>
-                    <p class='hidden'>Uploading... Wait for a redirect</p>
-                </div>
+                <div id='status'></div>
             </div>
         </div>
 
-       <!--  <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
-        <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.12.0.min.js"><\/script>')</script> -->
+        <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+        <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.12.0.min.js"><\/script>')</script>
         <script src="js/upload-js.js"></script>
 
         <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
-        <script>
+       <!--  <script>
             // (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
             // function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
             // e=o.createElement(i);r=o.getElementsByTagName(i)[0];
             // e.src='https://www.google-analytics.com/analytics.js';
             // r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
             // ga('create','UA-XXXXX-X','auto');ga('send','pageview');
-        </script>
+        </script> -->
     </body>
 </html>
