@@ -5,12 +5,25 @@
   	<meta name="description" content="{{ description }}">
     <title>{{ title }}</title>
   	<style>
-  		html, body, #map-div, #loading {
+  		html, body, #map-div {
     	  margin: 0;
     	  padding: 0;
     	  height: 100%;
-        background-color: white;
+        
     	}
+      #loading {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        z-index: 100;
+        background-color: rgba(230, 230, 230, 0.85);
+      }
+      #loading > svg {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%);
+      }
       #layers {
         padding: 5px;
         position: absolute;
@@ -63,12 +76,12 @@
       {% for dataset in datasets %}
       { 
         name: '{{ dataset.name }}', 
-        url: '{{ dataset.url }} ', 
+        url: '{{ dataset.url }}', 
         duration: {{ dataset.duration }}, 
         hardness: {{ dataset.hardness }}, 
         pointSize: {{ dataset.pointSize }}, 
         rgba: {{ dataset.rgba }}, 
-        enabled: {{ dataset.enabled }} 
+        enabled: {% if dataset.enabled %}true{% else %}false{% endif %}
       },
       {% endfor %}
       ];
@@ -82,7 +95,7 @@
       var timeSlider;
       var gl;
       var mapMatrix = new Float32Array(16);
-      var timeZoneOffset = (new Date().getTimezoneOffset()) * 60; // locale timezone offset, in seconds
+      var timeZoneOffset = (new Date().getTimezoneOffset()) * 60 * 1000; // locale timezone offset, in milliseconds
     
       /**
        * Initialize WebGL. Called when DOM ready
@@ -114,7 +127,10 @@
           return;
         }
         // TODO: handle blend mode changes
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.blendEquation( gl.FUNC_ADD );
         gl.enable( gl.BLEND );
+        // solid: gl.blendFunc( gl.ONE, gl.ONE_MINUS_SRC_ALPHA );
         gl.blendFunc( gl.SRC_ALPHA, gl.ONE ); // explore alpha blending modes at: http://delphic.me.uk/webglalpha.html
         //gl.blendFunc( gl.ONE_MINUS_CONSTANT_COLOR, gl.ONE_MINUS_SRC_ALPHA );
 
@@ -164,7 +180,7 @@
 
       function loadData(obj) {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', obj.url);
+        xhr.open('GET', '{% block project_url %}{% endblock %}' + obj.url);
         xhr.responseType = 'arraybuffer';
         xhr.onload = function() {
           obj.data = new Float32Array(this.response);
@@ -241,9 +257,10 @@
             gl.uniform1f(obj.u_PointSizeLocation, obj.pointSize)
             gl.uniformMatrix4fv(obj.u_MapMatrixLocation, false, mapMatrix);
 
-            var max = timeSlider.getCurrentTime() - timeZoneOffset;
-            var min = (obj.duration == null || obj.duration <= 0) ? timeSliderOptions['startTime'] : max - obj.duration;
-            gl.uniform2f(obj.u_TimeBoundsLocation, min, max); // time in JavaScript epoch time (milliseconds since 1970) in UTC timezone
+            var currentTime = timeSlider.getCurrentTime() - timeZoneOffset;
+            var min = currentTime - (obj.duration > 0 ? obj.duration : 0);
+            var max = currentTime - (obj.duration < 0 ? obj.duration : 0);
+            gl.uniform2f(obj.u_TimeBoundsLocation, min/1000.0, max/1000.0); // time in JavaScript epoch time (milliseconds since 1970) in UTC timezone
 
             // draw!  
             gl.drawArrays(gl.POINTS, 0, obj.count);
@@ -292,7 +309,7 @@
           float dist = distance(vec2(0.5), gl_PointCoord); // distance from the point at [0.5, 0.5]
           float alpha = 1.0 - smoothstep(min, 0.5, dist);
 
-          gl_FragColor = vec4(u_Color.rgb, u_Color.a * alpha);
+          gl_FragColor = u_Color * alpha;
         } 
     </script>
     {% block footer %}{% endblock %}

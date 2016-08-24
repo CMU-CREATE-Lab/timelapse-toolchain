@@ -85,7 +85,7 @@ def generate_binary(filename, destination_filename):
 		x = (lon + 180.0) * 256.0 / 360.0
 		y = 128.0 - math.log(math.tan((lat + 90.0) * math.pi / 360.0)) * 128.0 / math.pi
 		epochtime = (date - datetime(1970, 1, 1)).total_seconds() # // time in epoch time (seconds since 1970) in UTC timezone
-		items += [lon,lat,epochtime]
+		items += [x,y,epochtime]
 
 	with open(destination_filename, 'wb') as f:
 		array.array('f', items).tofile(f)
@@ -171,7 +171,7 @@ def get_fmt_fn(span):
 		date_format_str = yyyy
 	return date_format_str
 
-def generate_html(data, destination_filename):
+def generate_params(data):
 	span, increment = calc_span_increment(data)
 	fmt_str = get_fmt_fn(span)
 	
@@ -210,12 +210,15 @@ def generate_html(data, destination_filename):
 	        "name": data['project_id'],
 	        "url": "data.bin" ,
 	        "rgba": [0.89, 0.1, 0.11, 1.0],
-	        "duration": "null",
+	        "duration": span,
 	        "hardness": 0.5,
 	        "pointSize": 10.0,
-	        "enabled": 'true'
+	        "enabled": True
 	    }]
 	}
+	return params
+
+def write_html(params, destination_filename):
 	template = JINJA_ENVIRONMENT.get_template('project.html')
 	html = template.render(params)
 	with open(destination_filename, 'w') as f:
@@ -224,7 +227,7 @@ def generate_html(data, destination_filename):
 		except:
 			print 'error writing', filename
 			raise
-	return params
+	return True	
 
 
 def build_zip(data):

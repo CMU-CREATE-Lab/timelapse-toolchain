@@ -39,7 +39,7 @@
             <a name='upload'></a>
             <h2>Upload Your CSV File</h2>
             <div id='upload-information'>
-                <p><strong>Download an</strong> <a href="">example CSV file here</a></p>
+                <p><strong>Download an</strong> <a href="example-x-y-time.csv">example CSV file here</a></p>
                 <p><strong>Valid file layouts:</strong></p>
                 <ul>
                     <li>Lat, Lon</li>
@@ -57,7 +57,7 @@
                 </ul>
             </div>
             <div id='upload-form'>
-                <form onsubmit="return checkForm(this);" action="/create/" method="POST" enctype="multipart/form-data">
+                <form onsubmit="return checkForm(this);" action="/scripts/create/" method="POST" enctype="multipart/form-data">
                     <fieldset>
                         <legend>Upload CSV File:</legend>
                         <br>
@@ -65,7 +65,7 @@
  -->                    <div>
                             <label for="fileselect">Select a file from your computer</label>
                             <br>
-                            <input type="file" id="fileselect" name="file" required/>
+                            <input type="file" id="fileselect" name="csv_file" required/>
                             <br>
                         </div>
                         <br>

@@ -13,7 +13,7 @@ BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir)) # the directory
 PROJECTS_DIR = os.path.join(BASE_DIR, HTML_DIR, PROJECTS_DIR)
 
 #STATIC_DIR = os.path.join(BASE_DIR, HTML_DIR)
-STATIC_DIR = ''
+STATIC_DIR = '/timelapse-toolchain/html'
 
 STATIC_CSS_DIR = os.path.join(BASE_DIR, HTML_DIR, 'css')
 

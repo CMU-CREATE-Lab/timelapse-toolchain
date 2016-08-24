@@ -1,4 +1,5 @@
 {% extends "project.html" %}
+{% block project_url %}{{ STATIC_DIR + '/projects/' + project_id + '/'}}{% endblock %}
 {% block css %}
 <!-- CUSTOM-CSS -->
 <link rel="stylesheet" type="text/css" href="{{ STATIC_DIR }}/css/normalize.css"/>
@@ -16,9 +17,10 @@
   <div class='tool-window top left' id='title-settings'>
     <form >
       <fieldset>
-        <label for="title">Title:<br><input type="textarea" name="title" disabled="true" onchange="setTitle(this);" /></label>
+        <label for="title">Title:<br><input type="textarea" name="title" disabled="true" onchange="setTitle(this);" value="{{ title }}"/></label>
         <br>
         <label for="description">Description:<br><textarea name="description" cols="25" rows="8" disabled="true" onchange="setDescription(this);"></textarea></label>
+        <input type="hidden" name="project-url" value="{{ PROJECT_URL }}"/>
       </fieldset>
     </form>
   </div>

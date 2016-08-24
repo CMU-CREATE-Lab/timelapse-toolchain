@@ -5,16 +5,17 @@ db_filename = os.path.join(settings.CURRENT_DIR, 'projects.db')
 
 def store(params):
 	id = params['project_id']
-	email = params['email']
+	if 'email' in params:
+		email = params['email']
 	settings = json.dumps(params)
 	select_query = "SELECT COUNT(*) FROM projects WHERE id=?;"
-	update_query = "UPDATE projects SET email=?, settings=? WHERE id=?;"
+	update_query = "UPDATE projects SET settings=? WHERE id=?;"
 	insert_query = "INSERT INTO projects (id, email, settings) values (?, ?, ?);"
 	with sqlite3.connect(db_filename) as conn:
 		result = conn.execute(select_query, (id,))
 		count = next(iter(next(result)))
 		if count > 0:
-			conn.execute(update_query, (email, settings, id) )
+			conn.execute(update_query, (settings, id) )
 		else:
 			conn.execute(insert_query, (id, email, settings) )
 	
