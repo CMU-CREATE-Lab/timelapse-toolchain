@@ -7,11 +7,22 @@
         <meta name="description" content="Creating Timelapse visualizations seen at the CREATE lab">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/upload-style.css">
+        <link rel="stylesheet" href="static/css/normalize.css">
+        <link rel="stylesheet" href="static/css/upload-style.css">
     </head>
     <body>
     <!-- http://explorables.cmucreatelab.org/data-visualization-tools/examples/createlab-viirs/google-maps.html -->
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div id="jumbotron">
+            <ul class=flashes>
+            {% for message in messages %}
+              <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+            </div>
+          {% endif %}
+        {% endwith %}
         <div class="content-area" id="example-map">
             <iframe src="" frameborder="0"></iframe>
             <div class='title-bar' id='title'><h1><span style="white-space: nowrap;">Timelapse Visualization</span> Generator</h1></div>
@@ -42,10 +53,7 @@
                 <p><strong>Download an</strong> <a href="example-x-y-time.csv">example CSV file here</a></p>
                 <p><strong>Valid file layouts:</strong></p>
                 <ul>
-                    <li>Lat, Lon</li>
                     <li>Lat, Lon, Time</li>
-                    <li>Lat, Lon, Time, HexColor (Coming soon!)</li>
-                    <li>Lat, Lon, Time, R, G, B, A &nbsp;(Coming soon!)</li>
                 </ul>
                 <p><strong>Latitude</strong> and <strong>longitude</strong> must be specified in WGS84 decimal degrees.</p>
                 <p><strong>Dates</strong> must be supplied as strings in &ldquo;YYYY-MM-DD&rdquo; format,<br>or dates with times in "YYYY-MM-DD HH:MM:SS" or ISO 8601 "2016-01-01T09:00:00.000" format.</p>
@@ -57,12 +65,11 @@
                 </ul>
             </div>
             <div id='upload-form'>
-                <form onsubmit="return checkForm(this);" action="/scripts/create/" method="POST" enctype="multipart/form-data">
+                <form onsubmit="return checkForm(this);" action="create/" method="POST" enctype="multipart/form-data">
                     <fieldset>
                         <legend>Upload CSV File:</legend>
                         <br>
-<!--                         <input type='hidden' id='MAX_FILE_SIZE' name='MAX_FILE_SIZE' value=4000000000/>
- -->                    <div>
+                        <div>
                             <label for="fileselect">Select a file from your computer</label>
                             <br>
                             <input type="file" id="fileselect" name="csv_file" required/>
@@ -86,6 +93,7 @@
                         <br>
                         <label for="email">Your Email:</label>
                         <input type='email' name='email' placeholder='email@me.com' />
+                        <p><span style="color: rgb(150,150,150); font-size: 15px">A valid email is required to modify or delete your project later.</span></p>
                         <br><br>
                         <input type="submit" name='submit' value="Submit"/>
                         <input type="Reset" onclick="resetForm(this.form)" value="Reset"/>
@@ -99,11 +107,11 @@
         </div>
 
         <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
-        <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.12.0.min.js"><\/script>')</script>
-        <script src="js/upload-js.js"></script>
+        <script>window.jQuery || document.write('<script src="static/js/vendor/jquery-1.12.0.min.js"><\/script>')</script>
+        <script src="static/js/upload-js.js"></script>
 
         <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
-       <!--  <script>
+        <!--  <script>
             // (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
             // function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
             // e=o.createElement(i);r=o.getElementsByTagName(i)[0];

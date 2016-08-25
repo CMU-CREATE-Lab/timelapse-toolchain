@@ -2,8 +2,8 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-  	<meta name="description" content="{{ description }}">
-    <title>{{ title }}</title>
+  	<meta name="description" content="">
+    <title>Pittsburgh Assualts</title>
   	<style>
   		html, body, #map-div {
     	  margin: 0;
@@ -35,13 +35,13 @@
 
     <link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
     <link rel="stylesheet" type="text/css" href="https://explorables.cmucreatelab.org/data-visualization-tools/css/defaultUI.css" />
-    {% block css %}{% endblock %}
+    
   </head>
   <body>
     <div id="loading"></div>
     <div id="map-div"></div>
     <div id="time-slider-controls"></div>
-    {% block maptools %}{% endblock %}
+    
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3.24&key=AIzaSyB3jyGMTT0U184L-rhbFZS4IEKfnQmJAZI"></script>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
@@ -58,32 +58,35 @@
        */
        
       var mapOptions = {
-        zoom: {{ map.zoom }},
-        center: new google.maps.LatLng({{ map.center[0] }}, {{ map.center[1] }}),
+        zoom: 12,
+        center: new google.maps.LatLng(40.4331280787, -79.9748593567),
         mapTypeControl: true
       };
 
       var timeSliderOptions = { 
-        startTime: new Date({{ timeSlider.startTime }}).getTime(), 
-        endTime: new Date({{ timeSlider.endTime }}).getTime(), 
-        dwellAnimationTime: {{ timeSlider.dwellAnimationTime }}, 
-        increment: {{ timeSlider.increment }}, 
-        formatCurrentTime: function(date) { {{ timeSlider.timeFormat|safe }} },
-        animationRate: { fast: {{ timeSlider.animationRate.fast }}, medium: {{ timeSlider.animationRate.medium }}, slow: {{ timeSlider.animationRate.slow }} }
+        startTime: new Date(1451606400000).getTime(), 
+        endTime: new Date(1471910400000).getTime(), 
+        dwellAnimationTime: 2000, 
+        increment: 86400000, 
+        formatCurrentTime: function(date) { 
+		var month = date.getMonth() + 1, day = date.getDate(); 
+		return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day);
+		 },
+        animationRate: { fast: 12.77, medium: 25.54, slow: 51.08 }
       };
       
       var datasets = [
-      {% for dataset in datasets %}
+      
       { 
-        name: '{{ dataset.name }}', 
-        url: '{{ dataset.url }}', 
-        duration: {{ dataset.duration }}, 
-        hardness: {{ dataset.hardness }}, 
-        pointSize: {{ dataset.pointSize }}, 
-        rgba: {{ dataset.rgba }}, 
-        enabled: {% if dataset.enabled %}true{% else %}false{% endif %}
+        name: 'pittsburgh-assualts', 
+        url: 'data.bin', 
+        duration: 20304000000, 
+        hardness: 0.5, 
+        pointSize: 6, 
+        rgba: [0.88671875, 0.0390625, 0.00390625, 1], 
+        enabled: true
       },
-      {% endfor %}
+      
       ];
       
     </script>
@@ -131,11 +134,9 @@
         gl.blendEquation( gl.FUNC_ADD );
         gl.enable( gl.BLEND );
         // solid: gl.blendFunc( gl.ONE, gl.ONE_MINUS_SRC_ALPHA );
-        {% if blend == 'additive' %}
-        gl.blendFunc( gl.SRC_ALPHA, gl.ONE ); // explore alpha blending modes at: http://delphic.me.uk/webglalpha.html
-        {% else %}
+        
         gl.blendFunc( gl.ONE, gl.ONE_MINUS_SRC_ALPHA );
-        {% endif %}
+        
         //gl.blendFunc( gl.ONE_MINUS_CONSTANT_COLOR, gl.ONE_MINUS_SRC_ALPHA );
 
         // setup our datasets
@@ -184,14 +185,14 @@
 
       function loadData(obj) {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', '{% block project_url %}{% endblock %}' + obj.url);
+        xhr.open('GET', '' + obj.url);
         xhr.responseType = 'arraybuffer';
         xhr.onload = function() {
           obj.data = new Float32Array(this.response);
           obj.dataLoaded = true;
           initializeWebGL(obj);
           if(obj.enabled != false) document.getElementById('loading').style.display = 'none';
-          {% block js %}{% endblock %}
+          
         }
         xhr.send();
       }
@@ -316,6 +317,6 @@
           gl_FragColor = u_Color * alpha;
         } 
     </script>
-    {% block footer %}{% endblock %}
+    
   </body>
 </html>

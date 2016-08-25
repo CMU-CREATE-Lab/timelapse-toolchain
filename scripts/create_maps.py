@@ -17,8 +17,9 @@ app.secret_key = 'createx%8y#-t@#+ec7sbnoh^3s%+z8=zj%of8*9+vtu4y-=pkhxm7maps'
 app.debug = True
 
 @app.route("/")
-def hello():
-	return "Hello World"
+def home():
+	return render_template('home.html')
+	# return "Hello World"
 
 @app.route('/create/', methods=['POST'])
 def create_project():
@@ -29,18 +30,19 @@ def create_project():
 
 	if re.match(r'[^a-z\d\-]', project_id):
 		flash('Invalid project id. ')
-		return redirect(url_for('display_error'))		
+		return render_template('home.html')	
 	params['project_id'] = project_id
 	project_dir = os.path.join(settings.PROJECTS_DIR, project_id)
 
 	if 'csv_file' not in request.files:
 		flash('No file uploaded')
-		return redirect(url_for('display_error'))
+		return render_template('home.html')
 
 	file = request.files['csv_file']
 
 	if file.filename[-3:].lower() not in settings.ALLOWED_EXTENSIONS:
-		return redirect(url_for('display_error', error='Invalid extension or file type'))
+		flash('Invalid file extension or file type')
+		return render_template('home.html')
 
 	filename = secure_filename(file.filename)
 	filepath = os.path.join(settings.TEMP_UPLOAD_DIR, filename)
@@ -51,36 +53,33 @@ def create_project():
 	except OSError as e:
 		if e.errno == errno.EEXIST:
 			flash('Project already exists.')
-			return redirect(url_for('display_error'))
+			return redirect(url_for('home'))
 	except:
 		raise
 
 	# create project
-	data_shape = generate_binary(filepath, project_dir + '/data.bin')
+	data_shape = generate_binary(filepath, project_id)
 	params.update(data_shape)
 	final_params = generate_params(params)
-	write_html(final_params, project_dir + '/index.html')
+	write_html(final_params)
 	db.store(final_params)
 	return redirect(url_for('edit_project', project_id=project_id))
 
 @app.route('/edit/<project_id>')
 def edit_project(project_id):
 	params = db.retrieve(project_id)
-	project_url = request.url_root[:request.url_root[:-1].rfind('/')] + '/timelapse-toolchain/html/projects/' + project_id
-	return render_template('edit.html', STATIC_DIR=settings.STATIC_DIR, PROJECT_URL=project_url, **params)
+	project_url = 'projects/' + project_id
+	return render_template('edit.html', PROJECT_URL=project_url, **params)
 
 
-@app.route('/update/', methods=['PUT'])
-def update_project():
+@app.route('/update/<project_id>', methods=['PUT'])
+def update_project(project_id):
 	params = request.get_json()
-	project = request.referrer.split('/')[-1]
-	params['project_id'] = project
+	params['project_id'] = project_id
 	span = params['timeSlider']['endTime'] - params['timeSlider']['startTime']
-	#print 'span:', span
 	params['timeSlider']['timeFormat'] = get_fmt_fn(span)
-	#print 'time format', params['timeFormat']
-	project_dir = os.path.join(settings.PROJECTS_DIR, project)
-	write_html(params, project_dir + '/index.html')
+	project_dir = os.path.join(settings.PROJECTS_DIR, project_id)
+	write_html(params)
 	db.store(params)
 
 
@@ -92,12 +91,11 @@ def update_project():
 
 @app.route('/error')
 def display_error():
-	
 	messages = get_flashed_messages()
 	if messages:
 		for message in messages:
 			print message
-	return render_template('error.html')
+	return redirect(url_for('home'))
 
 
 

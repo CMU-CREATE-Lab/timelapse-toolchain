@@ -1,4 +1,4 @@
-var rootURL = "http://www.create.maps.org/projects/";
+var rootURL = window.location.href; // "http://www.create.maps.org/projects/";
 var firstEnter = true;
 var lastGeneratedID = "";
 var checkUrlTimer = null;
@@ -36,11 +36,11 @@ function checkForm(form) // Submit button clicked
         $('input[name=project_id]').focus();
         return false;
     }
-    if(!$('input[name=email]').val()){
+    /*if(!$('input[name=email]').val()){
         $('#status').html("<p><span style='color:red'>No Email:</span> Please enter an email and submit again.</p>");
         $('input[name=email]').focus();
         return false;
-    }
+    }*/
     if(!urlAvailable){
         $('#status').html("<p><span style='color:red'>URL Unavailable</span> Please enter another project ID and submit again.</p>");
         $('input[name=project_id]').focus();
@@ -80,7 +80,7 @@ function generateProjectID(value){
 
 function validateID(value){
     if(value){
-        $('#example-url span').text('e.g. ' + rootURL + value);
+        $('#example-url span').text('e.g. ' + rootURL + 'projects/' + value);
         var validURL = validateUrl(value.trim());
         $('#valid-url')[0].className = validURL ? 'validate valid' : 'validate invalid';
         if(validURL){
@@ -88,7 +88,7 @@ function validateID(value){
             $('#available-url')[0].className = 'validate';
             clearTimeout(checkUrlTimer);
             checkUrlTimer = setTimeout(function(){
-                checkUrl(rootURL+$('input[name=project_id]').val());
+                checkUrl(rootURL + 'projects/' + $('input[name=project_id]').val());
             }, 200);
         }else{
             $('#available-url')[0].className = 'validate';

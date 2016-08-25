@@ -14,6 +14,8 @@ function initializeCustomization(){
 	dictionary['title'] = $('input[name=title]').val();
 	dictionary['projectUrl'] = $('input[name=project-url]').val();
 	dictionary['description'] = $('input[name=description]').val();
+	dictionary['id'] = location.pathname.substring(location.pathname.lastIndexOf("/") + 1);
+	dictionary['baseUrl'] = window.location.href.split('/edit')[0]
 }
 
 function setDataset(dataset){
@@ -239,7 +241,7 @@ function setBlendFunc(blendstr, webgl){
 			webgl.blendFunc( gl.SRC_ALPHA, gl.ONE );
 			break;
 		case 'solid':
-			webgl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA );
+			webgl.blendFunc( gl.ONE, gl.ONE_MINUS_SRC_ALPHA );
 			break;
 		case 'default':
 
@@ -298,18 +300,22 @@ function preview(){
 //
 function save(){
 	packageAndSendData();
+
+	//$('body').append(shareScreen);
+}
+function show_share_window() {
 	var exportDiv = [];
 	exportDiv.push('<div class="dark-background">');
 	exportDiv.push('<div class="tool-window centerXY" id="share-window">');
 	exportDiv.push('<div class="x-button x-small"></div>');
 	exportDiv.push('<div class="share-title">');
 	exportDiv.push('<h4>Link:</h4>');
-	exportDiv.push('<textarea id="link" rows="1" readonly="true" wrap="off">' + dictionary['projectUrl'] + '</textarea>');
+	exportDiv.push('<textarea id="link" rows="1" readonly="true" wrap="off">' + dictionary.baseUrl + '/projects/' + dictionary.id + '</textarea>');
 	exportDiv.push('</div>');
 	exportDiv.push('<div class="share-title">');
 	exportDiv.push('<h4>Embed:</h4>');
 	exportDiv.push('<textarea id="embed" rows="5" readonly="true" wrap="soft">');
-	exportDiv.push('&lt;iframe src=&quot;' + dictionary['projectUrl'] + '&quot; style=&quot;width:100%; height:100%;&quot; marginwidth=&quot;0&quot; marginheight=&quot;0&quot; frameborder=&quot;0&quot; vspace=&quot;0&quot; hspace=&quot;0&quot;&gt;&lt;/iframe&gt;</textarea>');
+	exportDiv.push('&lt;iframe src=&quot;' + dictionary.baseUrl + '/projects/' + dictionary.id + '&quot; style=&quot;width:100%; height:100%;&quot; marginwidth=&quot;0&quot; marginheight=&quot;0&quot; frameborder=&quot;0&quot; vspace=&quot;0&quot; hspace=&quot;0&quot;&gt;&lt;/iframe&gt;</textarea>');
 	exportDiv.push('</div>');
 	exportDiv.push('<div class="share-title"><a id="download" href="" download><div class="button" id="download-button">Download Source Files</div></a></div>');
 	exportDiv.push('</div>');
@@ -321,11 +327,8 @@ function save(){
 		$('.dark-background').remove();
 	});
 	$('#map-tools').after(exportDiv);
-
-
-	//$('body').append(shareScreen);
-
 }
+
 
 function packageAndSendData(){
 	var data = {};
@@ -356,11 +359,17 @@ function packageAndSendData(){
 	}
 	console.log(JSON.stringify(data));
 	var xhr = new XMLHttpRequest();
-	xhr.open("PUT", '/scripts/update/', true);
+	var destUrl = dictionary.baseUrl + '/update/' + dictionary.id
+	xhr.open("PUT", destUrl, true);
 	xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
 	xhr.send(JSON.stringify(data));
 	xhr.onloadend = function () {
-		console.log("Update recieved.");
+		if (xhr.status == 200) {
+			show_share_window()
+			console.log("Update recieved.");
+		} else {
+			console.log("error. Server returned status code: " + xhr.status);
+		}
 	};
 }
 

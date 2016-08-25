@@ -4,6 +4,7 @@ from datetime import datetime
 from dateutil.parser import parse
 import zipfile
 import jinja2
+import settings
 
 # some useful constants	
 second = 1000
@@ -17,7 +18,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
-def generate_binary(filename, destination_filename):
+def generate_binary(filename, project_id):
 	params = {
 		'start_time': datetime.max,
 		'end_time': datetime.min,
@@ -87,6 +88,7 @@ def generate_binary(filename, destination_filename):
 		epochtime = (date - datetime(1970, 1, 1)).total_seconds() # // time in epoch time (seconds since 1970) in UTC timezone
 		items += [x,y,epochtime]
 
+	filename = os.path.join(settings.PROJECTS_DIR, project_id, 'data.bin')
 	with open(destination_filename, 'wb') as f:
 		array.array('f', items).tofile(f)
 	os.unlink(filename)
@@ -153,11 +155,17 @@ def calc_centroid_zoom(data):
 	#return data
 
 def get_fmt_fn(span):
-	mm_ss = "return date.getHours() + ':' + date.getMinutes()"
-	hh_mm = "var hrs = date.getHours(), mins = date.getMinutes(); return (hrs > 12 ? hrs - 12 : hrs) + ':' + (mins < 10 ? '0' + mins : mins) + ' ' + (hrs >= 12 ? 'pm' : 'am');"
-	yyyy_mm_dd_hh_mm = "var hrs = date.getHours(), mins = date.getMinutes(), month = date.getMonth() + 1, day = date.getDate(); return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day) + ' ' + (hrs > 12 ? hrs - 12 : hrs) + ':' + (mins < 10 ? '0' + mins : mins) + ' ' + (hrs >= 12 ? 'pm' : 'am');"
-	yyyy_mm_dd = "var month = date.getMonth() + 1, day = date.getDate(); return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day);"
-	yyyy = "return date.getFullYear()"
+	mm_ss = r"return date.getHours() + ':' + date.getMinutes()"
+	hh_mm = r"var hrs = date.getHours(), mins = date.getMinutes(); return (hrs > 12 ? hrs - 12 : hrs) + ':' + (mins < 10 ? '0' + mins : mins) + ' ' + (hrs >= 12 ? 'pm' : 'am');"
+	yyyy_mm_dd_hh_mm = r"""
+		var hrs = date.getHours(), mins = date.getMinutes(), month = date.getMonth() + 1, day = date.getDate(); 
+		return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day) + ' ' + (hrs > 12 ? hrs - 12 : hrs) + ':' + (mins < 10 ? '0' + mins : mins) + ' ' + (hrs >= 12 ? 'pm' : 'am');
+		"""
+	yyyy_mm_dd = r"""
+		var month = date.getMonth() + 1, day = date.getDate(); 
+		return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day);
+		"""
+	yyyy = "return date.getFullYear();"
 
 	if span < hour:
 		date_format_str = mm_ss
@@ -218,10 +226,11 @@ def generate_params(data):
 	}
 	return params
 
-def write_html(params, destination_filename):
+def write_html(params):
 	template = JINJA_ENVIRONMENT.get_template('project.html')
 	html = template.render(params)
-	with open(destination_filename, 'w') as f:
+	filename = os.path.join(settings.PROJECTS_DIR, params['project_id'], 'index.html')
+	with open(filename, 'w') as f:
 		try:
 			f.write(html)
 		except:
