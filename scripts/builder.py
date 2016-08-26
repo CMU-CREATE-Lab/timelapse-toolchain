@@ -49,12 +49,6 @@ def generate_binary(filename, project_id):
 		reader.fieldnames = [name.lower() for name in reader.fieldnames]
 		fieldnames = reader.fieldnames
 		rows = [row for row in reader]
-	# try:
-	# 	lat_col_name = next(iter(set(lats) & set(col_names)))
-	# 	lon_col_name = next(iter(set(lons) & set(col_names)))
-	# 	date_col_name = next(iter(set(dates) & set(col_names)))
-	# except StopIteration:
-	# 	raise ValueError('Invalid column specification.')
 
 	def find_opt_in_fields(option, fieldnames):
 		for field in fieldnames:
@@ -84,17 +78,22 @@ def generate_binary(filename, project_id):
 		raise ValueError('\n'.join(errors))
 		
 	items = []
+	geom_count = 0
+	lat_total = lon_total = 0
 	for row in rows:
 		try:
 			date = parse(row[date_col_name], ignoretz=True)
 		except ValueError:
-			print 'error converting date for: ', row
+			#print 'error converting date for: ', row
 			continue
 		try:
 			lon = float(row[lon_col_name])
 			lat = float(row[lat_col_name])
+			lon_total += lon
+			lat_total += lat
+			geom_count += 1
 		except ValueError:
-			print 'error converting coordinate for: ', row
+			#print 'error converting coordinate for: ', row
 			continue
 		
 		if lon > params['max_x']:
@@ -106,6 +105,7 @@ def generate_binary(filename, project_id):
 		elif lat < params['min_y']:
 			params['min_y'] = lat
 
+
 		if date < params['start_time']:
 			params['start_time'] = date
 		if date > params['end_time']:
@@ -115,6 +115,8 @@ def generate_binary(filename, project_id):
 		y = 128.0 - math.log(math.tan((lat + 90.0) * math.pi / 360.0)) * 128.0 / math.pi
 		epochtime = (date - datetime(1970, 1, 1)).total_seconds() # // time in epoch time (seconds since 1970) in UTC timezone
 		items += [x,y,epochtime]
+	params['avg_x'] = lon_total / geom_count
+	params['avg_y'] = lat_total / geom_count
 
 	bin_filename = os.path.join(settings.PROJECTS_DIR, project_id, 'data.bin')
 	with open(bin_filename, 'wb') as f:
@@ -154,33 +156,19 @@ def calc_span_increment(data):
 
 	return (span, increment)
 
-def calc_centroid_zoom(data):
-	# sets default zoom level for 800 x 600
-	lat1 = math.radians(data['min_y'])
-	lon1 = math.radians(data['min_x'])
-	lat2 = math.radians(data['max_y'])
-	lon2 = math.radians(data['max_x'])
-	dLng = math.radians(data['min_x'] - data['max_x'])
 
-	Bx = math.cos(lat2) * math.cos(dLng)
-	By = math.cos(lat2) * math.sin(dLng)
-	lat3 = math.atan2(math.sin(lat1) + math.sin(lat2), \
-			math.sqrt( (math.cos(lat1) + Bx) * (math.cos(lat1) + Bx) + By * By) )
-	lon3 = lon1 + math.atan2(By, math.cos(lat1) + Bx)
-
-	mid_y = round(math.degrees(lat3), 4)
-	mid_x = round(math.degrees(lon3), 4)
-
-	latFraction = (lat2 - lat1) / math.pi
+def calc_zoom(data):
+	#sets default zoom level for 800 x 600
+	latFraction = (math.radians(data['max_y']) - math.radians(data['min_y'])) / math.pi
 	lngDiff = data['max_x'] - data['min_x']
 	if lngDiff < 0:
 		lngDiff += 360
 	lngFraction = lngDiff / 360
 	latZoom = math.floor(math.log(768 / 256 / latFraction) / math.log(2))
 	lngZoom = math.floor(math.log(1024 / 256 / lngFraction) / math.log(2))
-	zoom = min([latZoom, lngZoom, 21])
-	return (mid_x, mid_y, zoom)
-	#return data
+	zoom = min([latZoom + 2, lngZoom + 2, 21])
+	return zoom
+
 
 def get_fmt_fn(span):
 	mm_ss = r"return date.getHours() + ':' + date.getMinutes()"
@@ -217,7 +205,7 @@ def generate_params(data):
 	
 	total_increments = span // increment
 
-	x, y, zoom = calc_centroid_zoom(data)
+	zoom = calc_zoom(data)
 
 	duration = pointSize = hardness = "null"
 	params = {
@@ -227,7 +215,7 @@ def generate_params(data):
 		"description": None,
 		"map": {
 			"zoom": zoom,
-			"center": [y, x]
+			"center": [data['avg_y'], data['avg_x']]
 		},
 		"timeSlider": {
 			"startTime": (data['start_time'] - datetime(1970, 1, 1)).total_seconds() * 1000 + increment,
