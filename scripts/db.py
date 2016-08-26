@@ -1,7 +1,7 @@
 import os, sqlite3, json
 import settings
 
-db_filename = os.path.join(settings.CURRENT_DIR, 'projects.db')
+db_filename = os.path.join(settings.CURRENT_DIR, 'db', 'projects.db')
 
 def store(params):
 	id = params['project_id']
