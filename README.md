@@ -33,7 +33,6 @@ Allow from all
 ```
 cd /var/www
 sudo git clone https://github.com/CMU-CREATE-Lab/timelapse-toolchain.git
-sudo chown -R YOURUSERNAME:www-data timelapse-toolchain
 cd timelapse-toolchain
 git checkout flask
 sudo pip install -r requirements.txt
@@ -51,9 +50,13 @@ from create_maps import app as application
 
 Script checks if sqlite database (projects.db) exists. If not, creates.
 ```
+mkdir projects
+sudo chown YOURUSERNAME:www-data projects
 cd scripts/
 python db.py
+sudo chwon YOURUSERNAMNE:www-data projects.db
 mkdir uploads
+sudo chown YOURUSERNAME:www-data uploads
 ```
 
 ## Run Flask's development server

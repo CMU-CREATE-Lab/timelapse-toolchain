@@ -1,4 +1,4 @@
-import os, sqlite3, json
+import os, sqlite3, json, errno
 import settings
 
 db_filename = os.path.join(settings.CURRENT_DIR, 'db', 'projects.db')
@@ -39,6 +39,12 @@ def main():
 		print 'Database exists, assume schema does, too.'
 
 def create_schema():
+	try:
+		os.makedirs('db')
+	except OSError as e:
+		if not e.errno == errno.EEXIST:
+			raise
+			
 	schema_query = """
 		CREATE TABLE projects (
 			id text primary key,

@@ -1,5 +1,5 @@
 
-import os, csv, math, array
+import os, csv, math, array, re
 from datetime import datetime
 from dateutil.parser import parse
 import zipfile
@@ -14,9 +14,9 @@ day = 24 * hour
 year = 365 * day
 
 JINJA_ENVIRONMENT = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.dirname(__file__) + '/templates'),
-    extensions=['jinja2.ext.autoescape'],
-    autoescape=True)
+	loader=jinja2.FileSystemLoader(os.path.dirname(__file__) + '/templates'),
+	extensions=['jinja2.ext.autoescape'],
+	autoescape=True)
 
 def generate_binary(filename, project_id):
 	params = {
@@ -31,6 +31,7 @@ def generate_binary(filename, project_id):
 	lats = ['latitude', 'lat', 'y']
 	lons = ['longitude','lon', 'lng', 'long', 'x']
 	dates = ['date', 'time', 'datetime', 'dates', 'times', 't', 'year', 'timestamp']
+	lat_col_name = lon_col_name = date_col_name = None
 
 	rows = None
 	reader = None
@@ -46,15 +47,42 @@ def generate_binary(filename, project_id):
 		else:
 			reader = csv.DictReader(file, fieldnames=('lat', 'lon', 'time'))
 		reader.fieldnames = [name.lower() for name in reader.fieldnames]
-		col_names = reader.fieldnames
+		fieldnames = reader.fieldnames
 		rows = [row for row in reader]
-	try:
-		lat_col_name = next(iter(set(lats) & set(col_names)))
-		lon_col_name = next(iter(set(lons) & set(col_names)))
-		date_col_name = next(iter(set(dates) & set(col_names)))
-	except StopIteration:
-		display_error('Invalid column specification.')
+	# try:
+	# 	lat_col_name = next(iter(set(lats) & set(col_names)))
+	# 	lon_col_name = next(iter(set(lons) & set(col_names)))
+	# 	date_col_name = next(iter(set(dates) & set(col_names)))
+	# except StopIteration:
+	# 	raise ValueError('Invalid column specification.')
 
+	def find_opt_in_fields(option, fieldnames):
+		for field in fieldnames:
+			match = re.search(option, field)
+			if match:
+				return field
+		return None
+	def search_options(option_list):
+		for option in option_list:
+			col_name = find_opt_in_fields(option, fieldnames)
+			if col_name:
+				return col_name
+		else:
+			return None
+	# errors.append('Invalid column specification. Missing column for ' + option_list[0])
+	lat_col_name = search_options(lats)
+	lon_col_name = search_options(lons)
+	date_col_name = search_options(dates)
+	errors = []
+	if not lat_col_name:
+		errors.append('Invalid column specification. Missing column for latitude')
+	if not lon_col_name:
+		errors.append('Invalid column specification. Missing column for longitude')
+	if not date_col_name:
+		errors.append('Invalid column specification. Missing column for date/time')
+	if len(errors) > 0:
+		raise ValueError('\n'.join(errors))
+		
 	items = []
 	for row in rows:
 		try:
@@ -137,7 +165,7 @@ def calc_centroid_zoom(data):
 	Bx = math.cos(lat2) * math.cos(dLng)
 	By = math.cos(lat2) * math.sin(dLng)
 	lat3 = math.atan2(math.sin(lat1) + math.sin(lat2), \
-	        math.sqrt( (math.cos(lat1) + Bx) * (math.cos(lat1) + Bx) + By * By) )
+			math.sqrt( (math.cos(lat1) + Bx) * (math.cos(lat1) + Bx) + By * By) )
 	lon3 = lon1 + math.atan2(By, math.cos(lat1) + Bx)
 
 	mid_y = round(math.degrees(lat3), 4)
@@ -146,7 +174,7 @@ def calc_centroid_zoom(data):
 	latFraction = (lat2 - lat1) / math.pi
 	lngDiff = data['max_x'] - data['min_x']
 	if lngDiff < 0:
-	    lngDiff += 360
+		lngDiff += 360
 	lngFraction = lngDiff / 360
 	latZoom = math.floor(math.log(768 / 256 / latFraction) / math.log(2))
 	lngZoom = math.floor(math.log(1024 / 256 / lngFraction) / math.log(2))
@@ -193,36 +221,36 @@ def generate_params(data):
 
 	duration = pointSize = hardness = "null"
 	params = {
-	    "title": data['title'],
-	    "project_id": data['project_id'],
-	    "email": data['email'],
-	    "description": None,
-	    "map": {
-	        "zoom": zoom,
-	        "center": [y, x]
-	    },
-	    "timeSlider": {
-	        "startTime": (data['start_time'] - datetime(1970, 1, 1)).total_seconds() * 1000 + increment,
-	        "endTime": (data['end_time'] - datetime(1970, 1, 1)).total_seconds() * 1000,
-	        "dwellAnimationTime": 2000,
-	        "increment": increment,
+		"title": data['title'],
+		"project_id": data['project_id'],
+		"email": data['email'],
+		"description": None,
+		"map": {
+			"zoom": zoom,
+			"center": [y, x]
+		},
+		"timeSlider": {
+			"startTime": (data['start_time'] - datetime(1970, 1, 1)).total_seconds() * 1000 + increment,
+			"endTime": (data['end_time'] - datetime(1970, 1, 1)).total_seconds() * 1000,
+			"dwellAnimationTime": 2000,
+			"increment": increment,
 		"timeFormat": fmt_str,
-	        "animationRate": {
-	            "fast": fast,
-	            "medium": medium,
-	            "slow": slow
-	        }
-	    },
-	    "blend": "additive",
-	    "datasets": [{
-	        "name": data['project_id'],
-	        "url": "data.bin" ,
-	        "rgba": [0.89, 0.1, 0.01, 1.0],
-	        "duration": span,
-	        "hardness": 0.5,
-	        "pointSize": 10.0,
-	        "enabled": True
-	    }]
+			"animationRate": {
+				"fast": fast,
+				"medium": medium,
+				"slow": slow
+			}
+		},
+		"blend": "additive",
+		"datasets": [{
+			"name": data['project_id'],
+			"url": "data.bin" ,
+			"rgba": [0.89, 0.1, 0.01, 1.0],
+			"duration": span,
+			"hardness": 0.5,
+			"pointSize": 10.0,
+			"enabled": True
+		}]
 	}
 	return params
 
@@ -269,4 +297,4 @@ if __name__ == "__main__":
 	import sys
 	if (len(sys.argv) != 2): # or (sys.argv[1][-3:] != 'csv'):
 		print 'Invalid arguments. Please provide valid path to csv file. e.g. "#> python csv-to-zip.py /Users/megge/data.csv"'
-	build_zip(sys.argv[1])
+	#build_zip(sys.argv[1])

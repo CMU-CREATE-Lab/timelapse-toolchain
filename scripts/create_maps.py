@@ -34,13 +34,13 @@ def create_project():
 
 	if 'csv_file' not in request.files:
 		flash('No file uploaded')
-		return render_template('home.html')
+		return redirect(url_for('home'))
 
 	file = request.files['csv_file']
 
 	if file.filename[-3:].lower() not in settings.ALLOWED_EXTENSIONS:
 		flash('Invalid file extension or file type')
-		return render_template('home.html')
+		return redirect(url_for('home'))
 
 	filename = secure_filename(file.filename)
 	filepath = os.path.join(settings.TEMP_UPLOAD_DIR, filename)
@@ -56,7 +56,12 @@ def create_project():
 		raise
 
 	# create project
-	data_shape = builder.generate_binary(filepath, project_id)
+	try:
+		data_shape = builder.generate_binary(filepath, project_id)
+	except ValueError as e:
+		flash(e)
+		return redirect(url_for('home'))
+		
 	params.update(data_shape)
 	final_params = builder.generate_params(params)
 	builder.write_html(final_params)
