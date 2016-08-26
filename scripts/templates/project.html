@@ -51,7 +51,7 @@
     <script type="text/javascript">
       // draw "loading" pill wheel
       for(var i=0, html; i<12; i++) html += "<rect x='46.5' y='40' width='7' height='20' rx='5' ry='5' fill='#00b2ff' transform='rotate(" + i*30 + " 50 50) translate(0 -30)'><animate attributeName='opacity' from='1' to='0' dur='1s' begin='" + (i+1)/12 + "s' repeatCount='indefinite'/></rect>"; 
-      document.getElementById('loading').innerHTML = '<svg style="position: absolute; top: 50%; left: 50%;" width="120px" height="120px" viewBox="0 0 100 100">' + html + '</svg>';
+      document.getElementById('loading').innerHTML = '<svg id="loading-spinner" style="position: absolute; top: 50%; left: 50%;" width="120px" height="120px" viewBox="0 0 100 100">' + html + '</svg>';
 
       /**
        * Define global variables and utility functions 
@@ -187,12 +187,21 @@
         xhr.open('GET', '{% block project_url %}{% endblock %}' + obj.url);
         xhr.responseType = 'arraybuffer';
         xhr.onload = function() {
+          if (xhr.status != 200)
+            xhr.onerror()
+          else
+            obj.dataLoaded = true;
           obj.data = new Float32Array(this.response);
           obj.dataLoaded = true;
           initializeWebGL(obj);
           if(obj.enabled != false) document.getElementById('loading').style.display = 'none';
           {% block js %}{% endblock %}
         }
+        xhr.onerror = function() {
+          document.getElementById('loading-spinner').style.visibility = 'hidden';
+          document.getElementById('loading').innerHTML = "<h2>Error loading " + obj.url + ". " + ((document.URL.substr(0,4) == 'file') ? "This page must be served through a webserver, such as Apache2. It cannot be loaded from your local disk using your current browser. (See <a href='http://bit.ly/2bEPdur'>this</a>.)" : "Please verify that the file is a valid URL.") + "</h2>";
+          document.getElementById('loading').style.visibility = 'visible';
+        };
         xhr.send();
       }
 

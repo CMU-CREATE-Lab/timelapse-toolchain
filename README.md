@@ -17,37 +17,43 @@ sudo /etc/init.d/apache2 restart
 
 Next, add the following lines to the appropriate Apache virtual host configuration file:
 ```
-    DocumentRoot /create-maps /var/www/create-maps/documents
-    <Directory /var/www/create-maps/documents>
-      Order allow,deny
-      Allow from all
-    </Directory>
+Alias "/create-maps/projects" "C:/users/markegge/work/timelapse-toolchain/projects"
+WSGIScriptAlias /create-maps "C:/users/markegge/work/timelapse-toolchain/create-maps.wsgi"
 
-    WSGIDaemonProcess create-maps processes=2 threads=15 display-name=%{GROUP}
-    WSGIProcessGroup create-maps
-
-    WSGIScriptAlias /scripts /var/www/create-maps/wsgi-scripts/main.py
-
-    <Directory /var/www/create-maps/wsgi-scripts>
-      Order allow,deny
-      Allow from all
-    </Directory>
+<Directory "C:/users/markegge/work/timelapse-toolchain">
+Require all granted # Apache 2.4
+Order allow,deny # Apache 2.2
+Allow from all
+</Directory>
 ```
 
-# Setting flask development environment
+# Configure the web application
 
-## Install requirements
-
+## Download, Set Permissions, Install requirements
 ```
-pip install -r requirements.txt
+cd /var/www
+sudo git clone https://github.com/CMU-CREATE-Lab/timelapse-toolchain.git
+sudo chown -R YOURUSERNAME:www-data timelapse-toolchain
+cd timelapse-toolchain
+git checkout flask
+sudo pip install -r requirements.txt
 ```
-
-## Create database
+## Modify create-maps.wsgi to specify application path
+Change the `path=` to correspond to the location of scripts. E.g. create-maps.wsgi:
+```
+import sys
+path = r'/var/www/timelapse-toolchain/scripts'
+if path not in sys.path:
+        sys.path.insert(0, path)
+from create_maps import app as application
+```
+## Create database and uploads folder
 
 Script checks if sqlite database (projects.db) exists. If not, creates.
 ```
 cd scripts/
 python db.py
+mkdir uploads
 ```
 
 ## Run Flask's development server

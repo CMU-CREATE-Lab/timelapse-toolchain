@@ -7,9 +7,7 @@ if path not in sys.path:
 from flask import Flask, request, redirect, render_template, url_for, flash, get_flashed_messages
 from werkzeug.utils import secure_filename
 import os, re, errno, ast, json
-import settings, db
-from builder import generate_binary, generate_params, write_html, build_zip, get_fmt_fn
-
+import settings, db, builder
 
 
 app = Flask(__name__)
@@ -58,10 +56,10 @@ def create_project():
 		raise
 
 	# create project
-	data_shape = generate_binary(filepath, project_id)
+	data_shape = builder.generate_binary(filepath, project_id)
 	params.update(data_shape)
-	final_params = generate_params(params)
-	write_html(final_params)
+	final_params = builder.generate_params(params)
+	builder.write_html(final_params)
 	db.store(final_params)
 	return redirect(url_for('edit_project', project_id=project_id))
 
@@ -77,16 +75,16 @@ def update_project(project_id):
 	params = request.get_json()
 	params['project_id'] = project_id
 	span = params['timeSlider']['endTime'] - params['timeSlider']['startTime']
-	params['timeSlider']['timeFormat'] = get_fmt_fn(span)
+	params['timeSlider']['timeFormat'] = builder.get_fmt_fn(span)
 	project_dir = os.path.join(settings.PROJECTS_DIR, project_id)
-	write_html(params)
+	builder.write_html(params)
+	builder.build_zip(project_id)
 	db.store(params)
-
-
 	if True:
 		return 'success', 200
 	else:
 		return 'error', 400
+
 
 
 @app.route('/error')

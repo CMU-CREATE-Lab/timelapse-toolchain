@@ -88,8 +88,8 @@ def generate_binary(filename, project_id):
 		epochtime = (date - datetime(1970, 1, 1)).total_seconds() # // time in epoch time (seconds since 1970) in UTC timezone
 		items += [x,y,epochtime]
 
-	filename = os.path.join(settings.PROJECTS_DIR, project_id, 'data.bin')
-	with open(destination_filename, 'wb') as f:
+	bin_filename = os.path.join(settings.PROJECTS_DIR, project_id, 'data.bin')
+	with open(bin_filename, 'wb') as f:
 		array.array('f', items).tofile(f)
 	os.unlink(filename)
 	return params
@@ -202,7 +202,7 @@ def generate_params(data):
 	        "center": [y, x]
 	    },
 	    "timeSlider": {
-	        "startTime": (data['start_time'] - datetime(1970, 1, 1)).total_seconds() * 1000,
+	        "startTime": (data['start_time'] - datetime(1970, 1, 1)).total_seconds() * 1000 + increment,
 	        "endTime": (data['end_time'] - datetime(1970, 1, 1)).total_seconds() * 1000,
 	        "dwellAnimationTime": 2000,
 	        "increment": increment,
@@ -213,11 +213,11 @@ def generate_params(data):
 	            "slow": slow
 	        }
 	    },
-	    "blend": "solid",
+	    "blend": "additive",
 	    "datasets": [{
 	        "name": data['project_id'],
 	        "url": "data.bin" ,
-	        "rgba": [0.89, 0.1, 0.11, 1.0],
+	        "rgba": [0.89, 0.1, 0.01, 1.0],
 	        "duration": span,
 	        "hardness": 0.5,
 	        "pointSize": 10.0,
@@ -239,7 +239,7 @@ def write_html(params):
 	return True	
 
 
-def build_zip(data):
+def build_zip(project_id):
 	try:
 		import zlib
 		compression = zipfile.ZIP_DEFLATED
@@ -248,12 +248,25 @@ def build_zip(data):
 
 	modes = { zipfile.ZIP_DEFLATED: 'deflated',  zipfile.ZIP_STORED:   'stored',   }
 
-	print 'creating archive'
-	zf = zipfile.ZipFile('result.zip', mode='w')
-	try:
-		print 'adding files with compression mode', modes[compression]
-		zf.write('index.html', compress_type=compression)
-		zf.write(data['bin_url'], compress_type=compression)
-	finally:
-		print 'closing'
-		zf.close()
+	project_dir = filename = os.path.join(settings.PROJECTS_DIR, project_id)
+	filename = os.path.join(project_dir, project_id + ".zip")
+	if os.path.exists(filename):
+		os.unlink(filename)
+
+	project_files = []
+	for root, dirs, files in os.walk(project_dir):
+		for file in files:
+			project_files.append(os.path.join(root, file))
+	
+	with zipfile.ZipFile(filename, mode='w') as zf:
+		for file in project_files:
+			#print 'adding', file, 'with compression mode', modes[compression]
+			filename = str(file).split(project_id)[-1][1:] # extract out the relative path from abs path
+			zf.write(file, arcname=filename, compress_type=compression)
+	return True
+
+if __name__ == "__main__":
+	import sys
+	if (len(sys.argv) != 2): # or (sys.argv[1][-3:] != 'csv'):
+		print 'Invalid arguments. Please provide valid path to csv file. e.g. "#> python csv-to-zip.py /Users/megge/data.csv"'
+	build_zip(sys.argv[1])

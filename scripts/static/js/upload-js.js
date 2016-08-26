@@ -3,6 +3,7 @@ var firstEnter = true;
 var lastGeneratedID = "";
 var checkUrlTimer = null;
 var urlAvailable = false;
+var urlChecked = false;
 
 function checkForm(form) // Submit button clicked
 {
@@ -41,10 +42,19 @@ function checkForm(form) // Submit button clicked
         $('input[name=email]').focus();
         return false;
     }*/
-    if(!urlAvailable){
-        $('#status').html("<p><span style='color:red'>URL Unavailable</span> Please enter another project ID and submit again.</p>");
-        $('input[name=project_id]').focus();
-        return false;
+    if(!urlChecked){
+        checkUrl(rootURL + 'projects/' + $('input[name=project_id]').val());
+        setTimeout(evalUrl(), 200);
+    } else {
+        evalUrl();
+    }
+
+    function evalUrl() {
+        if(!urlAvailable){
+            $('#status').html("<p><span style='color:red'>Project ID Unavailable</span> The specified project ID is already taken. Please enter another project ID and submit again.</p>");
+            $('input[name=project_id]').focus();
+            return false;
+        }
     }
 
     form.submit.disabled = true;
@@ -79,12 +89,12 @@ function generateProjectID(value){
 }
 
 function validateID(value){
+    urlChecked = false;
     if(value){
         $('#example-url span').text('e.g. ' + rootURL + 'projects/' + value);
         var validURL = validateUrl(value.trim());
         $('#valid-url')[0].className = validURL ? 'validate valid' : 'validate invalid';
         if(validURL){
-            urlAvailable = false;
             $('#available-url')[0].className = 'validate';
             clearTimeout(checkUrlTimer);
             checkUrlTimer = setTimeout(function(){
@@ -111,10 +121,11 @@ function checkUrl(url){
     var request = new XMLHttpRequest;
     request.open('HEAD', url, true);
     request.send();
-    request.onreadystatechange = function(){
+    request.onreadystatechange = function() {
         var available = !(request.status==200);
         $('#available-url')[0].className = available ? 'validate valid' : 'validate invalid';
         urlAvailable = available;
+        urlChecked = true;
     }
 };
 

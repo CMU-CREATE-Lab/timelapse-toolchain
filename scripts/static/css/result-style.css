@@ -458,7 +458,9 @@ input, textarea{
 .share-title {
     margin: 10px;
 }
-
+.share-title > a {
+color: #ccccee;
+}
 .share-title > h4 {
     font-weight: lighter; 
     margin: 5px 0px;
