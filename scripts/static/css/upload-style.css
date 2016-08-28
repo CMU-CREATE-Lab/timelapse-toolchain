@@ -177,7 +177,7 @@ form p{
 }
 
 #how-it-works{
-    height: 40%;
+    /*height: 40%;*/
     min-height: 335px;
 }
 
@@ -281,13 +281,13 @@ form p{
 }
 
 #upload-area{
-    height: 60%;
-    min-height: 560px;
+    /*height: 60%;*/
+    min-height: 760px;
 }
 
 #upload-information{
     width: 50%;
-    overflow: auto;
+    /* overflow: auto; */
 }
 
 #upload-information p, #upload-information ul{

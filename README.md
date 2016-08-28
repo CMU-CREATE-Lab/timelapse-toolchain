@@ -55,6 +55,7 @@ sudo chown YOURUSERNAME:www-data projects
 cd scripts/
 python db.py
 sudo chwon YOURUSERNAMNE:www-data projects.db
+sudo chmod g+wx projects.db
 mkdir uploads
 sudo chown YOURUSERNAME:www-data uploads
 ```
@@ -63,7 +64,7 @@ sudo chown YOURUSERNAME:www-data uploads
 Windows:
 ```
 set FLASK_DEBUG=1
-set FLASK_APP=main.py
+set FLASK_APP=scripts/create-maps.py
 python -m flask run
 ```
 *nix:

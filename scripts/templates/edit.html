@@ -20,6 +20,7 @@
         <label for="title">Title:<br><input type="textarea" name="title" disabled="true" onchange="setTitle(this);" value="{{ title }}"/></label>
         <br>
         <label for="description">Description:<br><textarea name="description" cols="25" rows="8" disabled="true" onchange="setDescription(this);"></textarea></label>
+        <input type="hidden" name="project-id" value="{{ PROJECT_ID }}"/>
         <input type="hidden" name="project-url" value="{{ PROJECT_URL }}"/>
       </fieldset>
     </form>

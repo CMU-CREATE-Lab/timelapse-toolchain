@@ -25,8 +25,8 @@
         {% endwith %}
         <div class="content-area" id="example-map">
             <iframe src="" frameborder="0"></iframe>
-            <div class='title-bar' id='title'><h1><span style="white-space: nowrap;">Timelapse Visualization</span> Generator</h1></div>
-            <div class='title-bar' id='subtitle'><h3>A simple CREATE Lab utility to allow non-programmers<br>to create embeddable WebGL based map visualizations.</h3></div>
+            <div class='title-bar' id='title'><h1><span style="white-space: nowrap;">Timelapse Visualization</span> Generator (pre-beta)</h1></div>
+            <div class='title-bar' id='subtitle'><h3>A simple CREATE Lab utility for creating simple and<br>beautiful animated timelapse map visualizations.</h3></div>
         </div>
         
         <div class='content-area' id='how-it-works'>
@@ -36,10 +36,10 @@
                     <p>upload your .csv file (comma-separated values)</p>
                 </div>
                 <div class="circle" id="box2">
-                    <p>wait to recieve an email after processing has finished</p>
+                    <p>customize and publish your visualization</p>
                 </div>
                 <div class="circle" id="box3">
-                    <p>customize and publish your visualization</p>
+                    <p>download your map project</p>
                 </div>
             </div>
         </div>
@@ -50,19 +50,25 @@
             <a name='upload'></a>
             <h2>Upload Your CSV File</h2>
             <div id='upload-information'>
+                <h3>Pre-Beta Disclaimer</h3>
+                <p>This utility is currently in early development stages. The utility will produce a zip file containing your project, and a live version of your project. The live version may be altered or removed at any time without notificiation.</p>
+                <h3>Instructions</h3>
+                To create a map, simply upload a CSV file containing columns for latitude, longitude, and time.
                 <p><strong>Download an</strong> <a href="example-x-y-time.csv">example CSV file here</a></p>
                 <p><strong>Valid file layouts:</strong></p>
                 <ul>
                     <li>Lat, Lon, Time</li>
                 </ul>
                 <p><strong>Latitude</strong> and <strong>longitude</strong> must be specified in WGS84 decimal degrees.</p>
-                <p><strong>Dates</strong> must be supplied as strings in &ldquo;YYYY-MM-DD&rdquo; format,<br>or dates with times in "YYYY-MM-DD HH:MM:SS" or ISO 8601 "2016-01-01T09:00:00.000" format.</p>
+                <p>For best results, <strong>dates / times</strong> should ideally be given in &ldquo;YYYY-MM-DD&rdquo; format,<br>or dates with times in "YYYY-MM-DD HH:MM:SS" format.</p>
                 <p>Columns must match the following format:</p>
                 <ul>
-                    <li><strong>Latitude:</strong> first column (no header), or named &ldquo;lat&rdquo; or &ldquo;latitude&rdquo;</li>
-                    <li><strong>Longitude:</strong> second column (no header), or named &ldquo;lon&rdquo; or &ldquo;longitude&rdquo;</li>
-                    <li><strong>Time:</strong> third column (no header), or named &ldquo;date&rdquo; or &ldquo;time&rdquo;</li>
+                    <li><strong>Latitude</strong> first column (no header), or named &ldquo;lat&rdquo; or &ldquo;latitude&rdquo;</li>
+                    <li><strong>Longitude</strong> second column (no header), or named &ldquo;lon&rdquo; or &ldquo;longitude&rdquo;</li>
+                    <li><strong>Time</strong> third column (no header), or named &ldquo;date&rdquo; or &ldquo;time&rdquo;</li>
                 </ul>
+                <p>If your CSV file contains headers, set your column names to "lat", "lon", and "time" (no quotation marks).</p>
+
             </div>
             <div id='upload-form'>
                 <form onsubmit="return checkForm(this);" action="create/" method="POST" enctype="multipart/form-data">

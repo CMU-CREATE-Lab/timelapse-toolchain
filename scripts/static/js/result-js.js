@@ -12,12 +12,12 @@ function initializeCustomization(){
 	});
 
 	dictionary['title'] = $('input[name=title]').val();
-	dictionary['projectUrl'] = $('input[name=project-url]').val();
+	dictionary['projectId'] = $('input[name=project-id]').val();
+	//dictionary['csrfToken'] = $('input[name=csrf_token]').val();
 	dictionary['description'] = $('input[name=description]').val();
-	dictionary['id'] = location.pathname.substring(location.pathname.lastIndexOf("/") + 1);
 	dictionary['baseUrl'] = window.location.href.split('/edit')[0]
-	dictionary['projectUrl'] = dictionary.baseUrl + '/projects/' + dictionary.id
-	dictionary['projectZipUrl'] = dictionary.projectUrl + '/' + dictionary.id + '.zip'
+	dictionary['projectUrl'] = dictionary.baseUrl + '/projects/' + dictionary.projectId
+	dictionary['projectZipUrl'] = dictionary.projectUrl + '/' + dictionary.projectId + '.zip'
 }
 
 function setDataset(dataset){
@@ -371,9 +371,10 @@ function packageAndSendData(){
 	}
 	console.log(JSON.stringify(data));
 	var xhr = new XMLHttpRequest();
-	var destUrl = dictionary.baseUrl + '/update/' + dictionary.id
+	var destUrl = dictionary.baseUrl + '/update/' + dictionary.projectId
 	xhr.open("PUT", destUrl, true);
 	xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+	//xhr.setRequestHeader("X-CSRFToken", dictionary.csrfToken)
 	xhr.send(JSON.stringify(data));
 	xhr.onloadend = function () {
 		if (xhr.status == 200) {
@@ -381,6 +382,7 @@ function packageAndSendData(){
 			show_download_link();
 			console.log("Update recieved.");
 		} else {
+			$('#share-message').html('Error saving project.');
 			console.log("error. Server returned status code: " + xhr.status);
 		}
 	};

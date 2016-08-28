@@ -11,8 +11,8 @@ import settings, db, builder
 
 
 app = Flask(__name__)
-app.secret_key = 'createx%8y#-t@#+ec7sbnoh^3s%+z8=zj%of8*9+vtu4y-=pkhxm7maps'
-app.debug = True
+app.secret_key = settings.SECRET_KEY
+app.debug = settings.DEBUG_MODE
 
 @app.route("/")
 def home():
@@ -72,7 +72,7 @@ def create_project():
 def edit_project(project_id):
 	params = db.retrieve(project_id)
 	project_url = 'projects/' + project_id
-	return render_template('edit.html', PROJECT_URL=project_url, **params)
+	return render_template('edit.html', PROJECT_ID=project_id, PROJECT_URL=project_url, **params)
 
 
 @app.route('/update/<project_id>', methods=['PUT'])
@@ -99,8 +99,6 @@ def display_error():
 		for message in messages:
 			print message
 	return redirect(url_for('home'))
-
-
 
 
 if __name__ == "__main__":
