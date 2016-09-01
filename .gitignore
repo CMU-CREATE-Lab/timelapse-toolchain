@@ -1,4 +1,0 @@
-scripts/db/projects.db
-*.pyc
-create-maps.wsgi
-projects/*
