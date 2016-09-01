@@ -46,36 +46,34 @@ if path not in sys.path:
         sys.path.insert(0, path)
 from create_maps import app as application
 ```
-## Create database and uploads folder
 
+## Modify scripts/settings.py as appropriate 
+
+## Create database and uploads folder
 Script checks if sqlite database (projects.db) exists. If not, creates.
 ```
 mkdir projects
 sudo chown YOURUSERNAME:www-data projects
 cd scripts/
 python db.py
-sudo chwon YOURUSERNAMNE:www-data projects.db
-sudo chmod g+wx projects.db
+chgrp -R www-data projects
+chmod g+wx db/projects.db
 mkdir uploads
-sudo chown YOURUSERNAME:www-data uploads
+chgrp www-data uploads
 ```
 
 ## Run Flask's development server
 Windows:
+Run serve.bat, or:
 ```
 set FLASK_DEBUG=1
 set FLASK_APP=scripts/create-maps.py
 python -m flask run
 ```
 *nix:
+Run './serve.sh', or:
 ```
 export FLASK_DEBUG=1
-export FLASK_APP=main.py
+export FLASK_APP=create-maps.wsgi
 python -m flask run
-```
-
-# Testing
-```
-curl -X POST -F 'project_title=My Project' -F 'email=ma4k@a.com' -F 'project_id=marks-project' -F file=@example-x-y-time.csv localhost:5000/create/
-curl -X GET localhost:5000/edit/marks-project
 ```

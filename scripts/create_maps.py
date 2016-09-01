@@ -6,7 +6,7 @@ if path not in sys.path:
 
 from flask import Flask, request, redirect, render_template, url_for, flash, get_flashed_messages
 from werkzeug.utils import secure_filename
-import os, re, errno, ast, json
+import os, re, errno, ast, json, shutil
 import settings, db, builder
 
 
@@ -64,8 +64,13 @@ def create_project():
 		data_shape = builder.generate_binary(filepath, project_id)
 	except ValueError as e:
 		flash(e)
+		shutil.rmtree(project_dir, ignore_errors=True)
 		return redirect(url_for('home'))
-		
+	except:
+		flash("There was an error processing your uploaded data. Please review the file upload specifications.")
+		shutil.rmtree(project_dir, ignore_errors=True)
+		return redirect(url_for('home'))
+
 	params.update(data_shape)
 	final_params = builder.generate_params(params)
 	builder.write_html(final_params)
@@ -93,8 +98,6 @@ def update_project(project_id):
 		return 'success', 200
 	else:
 		return 'error', 400
-
-
 
 @app.route('/error')
 def display_error():
