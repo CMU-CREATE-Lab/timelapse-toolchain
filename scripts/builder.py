@@ -89,13 +89,18 @@ def generate_binary(filename, project_id):
 		try:
 			lon = float(row[lon_col_name])
 			lat = float(row[lat_col_name])
-			lon_total += lon
-			lat_total += lat
-			geom_count += 1
 		except ValueError:
 			#print 'error converting coordinate for: ', row
 			continue
+			
+		if not lat or not lon or abs(lat) >= 90 or abs(lon) >= 180:
+			# should probably raise a warning or some such
+			continue
 		
+		lon_total += lon
+		lat_total += lat
+		geom_count += 1
+
 		if lon > params['max_x']:
 			params['max_x'] = lon
 		elif lon < params['min_x']:
@@ -112,7 +117,10 @@ def generate_binary(filename, project_id):
 			params['end_time'] = date
 
 		x = (lon + 180.0) * 256.0 / 360.0
-		y = 128.0 - math.log(math.tan((lat + 90.0) * math.pi / 360.0)) * 128.0 / math.pi
+		try:
+			y = 128.0 - math.log(math.tan((lat + 90.0) * math.pi / 360.0)) * 128.0 / math.pi
+		except ValueError as e:
+			raise ValueError("Error calc y for val: " + str(lat))
 		epochtime = (date - datetime(1970, 1, 1)).total_seconds() # // time in epoch time (seconds since 1970) in UTC timezone
 		items += [x,y,epochtime]
 	params['avg_x'] = lon_total / geom_count

@@ -63,11 +63,11 @@ def create_project():
 	try:
 		data_shape = builder.generate_binary(filepath, project_id)
 	except ValueError as e:
-		flash(e)
+		flash(repr(e))
 		shutil.rmtree(project_dir, ignore_errors=True)
 		return redirect(url_for('home'))
-	except:
-		flash("There was an error processing your uploaded data. Please review the file upload specifications.")
+	except Exception, e:
+		flash("There was an error processing your uploaded data. Please review the file upload specifications. (Details: " + repr(e) + ")")
 		shutil.rmtree(project_dir, ignore_errors=True)
 		return redirect(url_for('home'))
 
