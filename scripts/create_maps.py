@@ -107,18 +107,19 @@ def display_error():
 			print message
 	return redirect(url_for('home'))
 
+# Serve static files
 # Only for local-development
-@app.route('/projects/<project_id>/')
-def serve_project(project_id):
-    return serve_project_file(project_id, 'index.html')
+if app.debug:
+	@app.route('/projects/<project_id>/')
+	def serve_project(project_id):
+	    return serve_project_file(project_id, 'index.html')
 
-
-@app.route('/projects/<project_id>/<static_file>')
-def serve_project_file(project_id, static_file):
-    import flask
-    # send_static_file will guess the correct MIME type
-    project_dir = os.path.join(settings.PROJECTS_DIR, project_id)
-    return flask.send_from_directory(project_dir, static_file)
+	@app.route('/projects/<project_id>/<static_file>')
+	def serve_project_file(project_id, static_file):
+	    import flask
+	    # send_static_file will guess the correct MIME type
+	    project_dir = os.path.join(settings.PROJECTS_DIR, project_id)
+	    return flask.send_from_directory(project_dir, static_file)
 
 
 if __name__ == "__main__":
