@@ -35,25 +35,29 @@ def generate_binary(filename, project_id):
 
 	rows = None
 	reader = None
-	with open(filename, 'rb') as file:
-		sample = file.read(1024)
-		file.seek(0)
-		dialect = csv.Sniffer().sniff(sample)
+	with open(filename, 'rU') as file:
+		sample = file.read(2048)
+		#sample = file.readline() + '\n' + file.readline() # read first two lines
+		
+		dialect = csv.Sniffer().sniff(sample, delimiters=',;|') 
 		has_header = csv.Sniffer().has_header(sample)
+		file.seek(0)
 
 		if has_header:
-			reader = csv.DictReader(file)
+			reader = csv.DictReader(file, dialect=dialect)
 			next(reader)
 		else:
-			reader = csv.DictReader(file, fieldnames=('lat', 'lon', 'time'))
+			reader = csv.DictReader(file, dialect=dialect, fieldnames=('lat', 'lon', 'time'))
 		reader.fieldnames = [name.lower() for name in reader.fieldnames]
 		fieldnames = reader.fieldnames
 		rows = [row for row in reader]
 
 	def find_opt_in_fields(option, fieldnames):
 		for field in fieldnames:
-			match = re.search(option, field)
-			if match:
+			#match = re.search(option, field)
+			#if match:
+			#	return field
+			if option == field:
 				return field
 		return None
 	def search_options(option_list):
@@ -123,14 +127,32 @@ def generate_binary(filename, project_id):
 			raise ValueError("Error calc y for val: " + str(lat))
 		epochtime = (date - datetime(1970, 1, 1)).total_seconds() # // time in epoch time (seconds since 1970) in UTC timezone
 		items += [x,y,epochtime]
-	params['avg_x'] = lon_total / geom_count
-	params['avg_y'] = lat_total / geom_count
+	
+	if geom_count == 0:
+		raise Exception('something went terribly wrong')
+	else:
+		params['avg_x'] = lon_total / geom_count
+		params['avg_y'] = lat_total / geom_count
 
 	bin_filename = os.path.join(settings.PROJECTS_DIR, project_id, 'data.bin')
 	with open(bin_filename, 'wb') as f:
 		array.array('f', items).tofile(f)
 	os.unlink(filename)
 	return params
+
+def calc_zoom(data):
+	#sets default zoom level for 800 x 600
+	if data['max_y'] == 0 or data['min_y'] == 0 or data['max_x'] == 0 or data['min_x'] == 0:
+		return 0
+	latFraction = (math.radians(data['max_y']) - math.radians(data['min_y'])) / math.pi
+	lngDiff = data['max_x'] - data['min_x']
+	if lngDiff < 0:
+		lngDiff += 360
+	lngFraction = lngDiff / 360
+	latZoom = math.floor(math.log(768 / 256 / latFraction) / math.log(2))
+	lngZoom = math.floor(math.log(1024 / 256 / lngFraction) / math.log(2))
+	zoom = min([latZoom + 2, lngZoom + 2, 21])
+	return zoom
 
 def calc_span_increment(data):
 	span = (data['end_time'] - data['start_time']).total_seconds() * 1000
@@ -165,17 +187,6 @@ def calc_span_increment(data):
 	return (span, increment)
 
 
-def calc_zoom(data):
-	#sets default zoom level for 800 x 600
-	latFraction = (math.radians(data['max_y']) - math.radians(data['min_y'])) / math.pi
-	lngDiff = data['max_x'] - data['min_x']
-	if lngDiff < 0:
-		lngDiff += 360
-	lngFraction = lngDiff / 360
-	latZoom = math.floor(math.log(768 / 256 / latFraction) / math.log(2))
-	lngZoom = math.floor(math.log(1024 / 256 / lngFraction) / math.log(2))
-	zoom = min([latZoom + 2, lngZoom + 2, 21])
-	return zoom
 
 
 def get_fmt_fn(span):

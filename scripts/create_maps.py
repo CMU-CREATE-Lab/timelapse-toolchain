@@ -14,9 +14,11 @@ app = Flask(__name__)
 app.secret_key = settings.SECRET_KEY
 app.debug = settings.DEBUG_MODE
 
+sentry = None
 if not app.debug:
 	from raven.contrib.flask import Sentry
 	sentry = Sentry(app, dsn='https://4ee36d6a040e40ee978713b57205782e:2db8c0a1f3844bc0bc32c2f33cc15f01@sentry.io/94695')
+
 
 @app.route("/")
 def home():
@@ -67,6 +69,9 @@ def create_project():
 		shutil.rmtree(project_dir, ignore_errors=True)
 		return redirect(url_for('home'))
 	except Exception, e:
+		if sentry:
+			sentry.captureException()
+
 		flash("There was an error processing your uploaded data. Please review the file upload specifications. (Details: " + repr(e) + ")")
 		shutil.rmtree(project_dir, ignore_errors=True)
 		return redirect(url_for('home'))
