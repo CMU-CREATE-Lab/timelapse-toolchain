@@ -129,7 +129,11 @@ def generate_binary(filename, project_id):
 		items += [x,y,epochtime]
 	
 	if geom_count == 0:
-		raise Exception('something went terribly wrong')
+		raise RuntimeError('No valid geometries were read.') # for reasons I don't understand, it doesn't seem to matter what exception class I raise. An Exception object is always raised.
+
+	if params['start_time'] == params['end_time']:
+		raise ValueError('Time span invalid. Start time equals end time.')
+
 	else:
 		params['avg_x'] = lon_total / geom_count
 		params['avg_y'] = lat_total / geom_count

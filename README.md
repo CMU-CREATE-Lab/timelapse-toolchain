@@ -60,6 +60,8 @@ chgrp -R www-data projects
 chmod g+wx db/projects.db
 mkdir uploads
 chgrp www-data uploads
+mkdir failed-projects
+chgrp www-data failed-projects
 ```
 
 ## Run Flask's development server
