@@ -19,11 +19,7 @@ if not app.debug:
 	from raven.contrib.flask import Sentry
 	sentry = Sentry(app, dsn='https://4ee36d6a040e40ee978713b57205782e:2db8c0a1f3844bc0bc32c2f33cc15f01@sentry.io/94695')
 
-required_paths = ['projects', 'scripts/db', 'scripts/uploads', 'failed-projects']
 
-for path in required_paths:
-	if not os.path.exists(path):
-		raise Exception('Required directory ' + path + ' does not exist. Please verify installation.')
 @app.route("/")
 def home():
 	return render_template('home.html')
