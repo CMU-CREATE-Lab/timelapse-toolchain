@@ -17,7 +17,7 @@ app.debug = settings.DEBUG_MODE
 sentry = None
 if not app.debug:
 	from raven.contrib.flask import Sentry
-	sentry = Sentry(app, dsn='https://4ee36d6a040e40ee978713b57205782e:2db8c0a1f3844bc0bc32c2f33cc15f01@sentry.io/94695')
+	sentry = Sentry(app, dsn='https://3d84331fabdb4f76be0a00ff20f078a8:cccf16f173b346f6ad96e2cbbe536910@sentry.io/118359')
 
 
 @app.route("/")
@@ -73,8 +73,8 @@ def create_project():
 			message = "There was an error processing your uploaded data."
 			message += "Please review the file upload specifications. (Details: " + repr(e) + ")"
 		flash(message)
-		if not os.path.exists(os.path.join("failed-projects", filename)):
-			shutil.move(filepath, "failed-projects") # if the project CSV isn't already in the failed projects folder...
+		if not os.path.exists(os.path.join(settings.FAILED_PROJECTS_DIR, filename)):
+			shutil.move(filepath, settings.FAILED_PROJECTS_DIR) # if the project CSV isn't already in the failed projects folder...
 		shutil.rmtree(project_dir, ignore_errors=True)
 		return redirect(url_for('home'))
 	
